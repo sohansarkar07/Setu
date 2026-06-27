@@ -242,6 +242,13 @@ Setu/
   <img src="./unit%20test%20proof/image.png" alt="Smart Contract Unit Tests Pass" width="80%" />
 </p>
 
+### 4. Mobile Responsiveness
+*These screenshots demonstrate that the UI is fully responsive and optimized for mobile devices.*
+<p align="center">
+  <img src="./mobile%20responsive/Screenshot%202026-06-28%20005359.png" alt="Mobile Dashboard" width="30%" />
+  <img src="./mobile%20responsive/Screenshot%202026-06-28%20005426.png" alt="Mobile Marketplace" width="30%" />
+</p>
+
 ---
 
 <a name="error-handling"></a>
