@@ -8,6 +8,9 @@
     <a href="https://github.com/sohansarkar07/Setu">
       <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white" />
     </a>
+    <a href="PUT_YOUR_DEMO_VIDEO_LINK_HERE">
+      <img src="https://img.shields.io/badge/Demo_Video-FFD700?style=for-the-badge&logo=google-drive&logoColor=black" />
+    </a>
   </p>
 
   <img src="https://img.shields.io/badge/Rust-black?style=for-the-badge&logo=rust&logoColor=white" />
