@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useWallet } from '@/lib/wallet-context';
 import { useInvoiceStore } from '@/lib/invoice-store';
-import { sendXLMTransaction } from '@/lib/stellar';
+import { mintInvoiceOnChain } from '@/lib/soroban';
 import {
   FileText, Wallet, AlertCircle, CheckCircle, Loader2,
   Calendar, DollarSign, User, FileCheck, ArrowRight,
@@ -53,71 +53,31 @@ export default function MintInvoicePage() {
     setMintResult(null);
 
     try {
-      // Simulate on-chain transaction
-      const txResult = await sendXLMTransaction(
+      // Real on-chain Soroban transaction
+      const txHash = await mintInvoiceOnChain(
         publicKey,
-        buyerAddress,
-        '0.01',
-        `SETU-MINT-${Date.now()}`
+        buyerAddress.trim(),
+        BigInt(Math.floor(parsedAmount * 10_000_000)), // Convert to decimals (7)
+        description.trim(),
+        BigInt(new Date(dueDate).getTime() / 1000) // Unix timestamp
       );
 
-      if (txResult.success) {
-        const invoice = mintInvoice({
-          description: description.trim(),
-          amount: parsedAmount,
-          dueDate,
-          supplier: publicKey,
-          buyer: buyerAddress.trim(),
-          txHash: txResult.hash,
-        });
-
-        setMintResult({
-          success: true,
-          invoiceId: invoice.id,
-          txHash: txResult.hash,
-        });
-
-        // Reset form
-        setDescription('');
-        setAmount('');
-        setDueDate('');
-        setBuyerAddress('');
-      } else {
-        // Fallback for demo
-        const invoice = mintInvoice({
-          description: description.trim(),
-          amount: parsedAmount,
-          dueDate,
-          supplier: publicKey,
-          buyer: buyerAddress.trim(),
-        });
-
-        setMintResult({
-          success: true,
-          invoiceId: invoice.id,
-          error: txResult.error,
-        });
-
-        setDescription('');
-        setAmount('');
-        setDueDate('');
-        setBuyerAddress('');
-      }
-    } catch (error) {
       const invoice = mintInvoice({
         description: description.trim(),
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         dueDate,
         supplier: publicKey,
         buyer: buyerAddress.trim(),
+        txHash: txHash,
       });
 
       setMintResult({
         success: true,
         invoiceId: invoice.id,
-        error: error instanceof Error ? error.message : 'Transaction failed but invoice created locally',
+        txHash: txHash,
       });
 
+      // Reset form
       setDescription('');
       setAmount('');
       setDueDate('');

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useWallet } from '@/lib/wallet-context';
 import { useInvoiceStore } from '@/lib/invoice-store';
-import { shortenAddress, fundInvoice as fundInvoiceOnChain } from '@/lib/stellar';
+import { shortenAddress } from '@/lib/stellar';
+import { fundInvoiceOnChain } from '@/lib/soroban';
 import {
   TrendingUp, Shield, Wallet, AlertCircle, Coins,
   Clock, CheckCircle, Loader2, DollarSign, Activity,
@@ -39,26 +40,19 @@ export default function MarketplacePage() {
       const invoice = invoices.find(i => i.id === invoiceId);
       if (!invoice) throw new Error('Invoice not found');
 
-      // Simulate on-chain funding
-      const result = await fundInvoiceOnChain(
-        publicKey,
-        invoice.supplier,
-        amount.toString(),
-        `SETU-FUND-${Date.now()}`
-      );
+      // Real on-chain funding
+      const numericId = parseInt(invoiceId.replace('INV-', ''));
+      const txHash = await fundInvoiceOnChain(publicKey, BigInt(numericId));
 
-      if (result.success) {
-        fundInvoice(invoiceId, publicKey, result.hash);
-        addNotification(
-          'success',
-          'Investment Successful',
-          `You have successfully funded invoice ${invoiceId.slice(-4)}. Asset transferred to supplier.`
-        );
-      } else {
-        addNotification('error', 'Funding Failed', result.error || 'Unknown error');
-      }
+      fundInvoice(invoiceId, publicKey, txHash);
+      addNotification(
+        'success',
+        'Investment Successful',
+        `You have successfully funded invoice ${invoiceId}. Asset transferred to supplier.`
+      );
     } catch (error) {
-      addNotification('error', 'Transaction Failed', error instanceof Error ? error.message : 'Unknown error');
+      console.error(error);
+      addNotification('error', 'Funding Failed', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setFundingId(null);
     }

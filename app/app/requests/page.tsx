@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useWallet } from '@/lib/wallet-context';
 import { useInvoiceStore } from '@/lib/invoice-store';
-import { verifyInvoiceSignature, shortenAddress } from '@/lib/stellar';
+import { shortenAddress } from '@/lib/stellar';
+import { verifyInvoiceOnChain } from '@/lib/soroban';
 import {
   ClipboardCheck, AlertCircle, CheckCircle, Wallet,
   ShieldCheck, Loader2, ArrowRight, FileText, User, 
@@ -26,24 +27,18 @@ export default function RequestsPage() {
     setVerifyingId(invoiceId);
 
     try {
-      // Simulate on-chain verification
-      const result = await verifyInvoiceSignature(
-        publicKey,
-        invoiceId,
-        `SETU-VERIFY-${Date.now()}`
-      );
+      // Real on-chain Soroban transaction
+      const numericId = parseInt(invoiceId.replace('INV-', ''));
+      const txHash = await verifyInvoiceOnChain(publicKey, BigInt(numericId));
 
-      if (result.success) {
-        verifyInvoice(invoiceId, result.hash);
-        addNotification(
-          'success',
-          'Verification Complete',
-          `Invoice ${invoiceId.slice(-4)} has been cryptographically verified on-chain.`
-        );
-      } else {
-        addNotification('error', 'Verification Failed', result.error || 'Unknown error');
-      }
+      verifyInvoice(invoiceId, txHash);
+      addNotification(
+        'success',
+        'Verification Complete',
+        `Invoice ${invoiceId} has been cryptographically verified on-chain.`
+      );
     } catch (error) {
+      console.error(error);
       addNotification('error', 'Verification Failed', error instanceof Error ? error.message : 'Transaction failed');
     } finally {
       setVerifyingId(null);
