@@ -3,11 +3,15 @@ import { Client as TokenClient, networks as tokenNetworks } from 'token-client';
 import { isConnected, requestAccess, signTransaction } from '@stellar/freighter-api';
 import { rpc, xdr } from '@stellar/stellar-sdk';
 
-let albedoInstance: any = null;
+interface AlbedoIntent {
+  tx: (params: { xdr: string; network: string }) => Promise<{ signed_envelope_xdr: string }>;
+}
+
+let albedoInstance: AlbedoIntent | null = null;
 if (typeof window !== 'undefined') {
   import('@albedo-link/intent').then(module => {
-    albedoInstance = module.default;
-  }).catch(err => console.error("Failed to load albedo", err));
+    albedoInstance = module.default as AlbedoIntent;
+  }).catch(err => console.error('Failed to load albedo', err));
 }
 
 const RPC_URL = 'https://soroban-testnet.stellar.org';

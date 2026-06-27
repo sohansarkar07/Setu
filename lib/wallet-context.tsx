@@ -3,11 +3,16 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { getAccountBalance, shortenAddress, NETWORK } from './stellar';
 
-let albedoInstance: any = null;
+interface AlbedoIntent {
+  publicKey: (params: Record<string, unknown>) => Promise<{ pubkey: string }>;
+  tx: (params: { xdr: string; network: string }) => Promise<{ signed_envelope_xdr: string }>;
+}
+
+let albedoInstance: AlbedoIntent | null = null;
 if (typeof window !== 'undefined') {
   import('@albedo-link/intent').then(module => {
-    albedoInstance = module.default;
-  }).catch(err => console.error("Failed to load albedo", err));
+    albedoInstance = module.default as AlbedoIntent;
+  }).catch(err => console.error('Failed to load albedo', err));
 }
 
 interface WalletState {
