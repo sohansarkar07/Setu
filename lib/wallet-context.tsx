@@ -48,39 +48,36 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [state.publicKey]);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const connect = useCallback(async () => {
+    setIsModalOpen(true);
+  }, []);
+
+  const connectFreighter = useCallback(async () => {
+    setIsModalOpen(false);
     setState(prev => ({ ...prev, isConnecting: true, error: null }));
     
     try {
-      // Check if we're in a browser
       if (typeof window === 'undefined') {
         throw new Error('Wallet connection requires a browser environment.');
       }
 
       const freighterApi = await import('@stellar/freighter-api');
-      
-      // Check if Freighter extension is installed
       const connected = await freighterApi.isConnected();
       if (!connected.isConnected) {
-        throw new Error(
-          'Freighter wallet extension is not installed. Please install it from https://freighter.app and reload the page.'
-        );
+        throw new Error('Freighter wallet extension is not installed. Please install it from https://freighter.app and reload the page.');
       }
 
-      // Request access and get address in one step
       const accessResult = await freighterApi.requestAccess();
-      
       if (accessResult.error) {
         throw new Error(accessResult.error.message || 'Could not connect to Freighter. Please make sure it is unlocked.');
       }
-      
       if (!accessResult.address) {
         throw new Error('Could not get wallet address. Please make sure Freighter is unlocked and try again.');
       }
 
       const publicKey = accessResult.address;
-      
-      // Fetch balance
       let xlmBalance = 0;
       let tokens: { asset: string; balance: string }[] = [];
       try {
@@ -88,7 +85,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         xlmBalance = parseFloat(balances.xlm) || 0;
         tokens = balances.tokens;
       } catch {
-        // Account may not be funded yet, that's OK
         console.warn('Account not funded on testnet yet');
       }
       
@@ -102,7 +98,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         error: null,
       });
 
-      // Store in localStorage
       localStorage.setItem('setu_wallet_connected', 'true');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to connect wallet';
@@ -114,6 +109,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       console.error('Wallet connection error:', error);
     }
   }, []);
+
+  const handleWalletSelect = (wallet: string) => {
+    if (wallet === 'freighter') {
+      connectFreighter();
+    } else {
+      setState(prev => ({ ...prev, error: `${wallet} integration coming soon!` }));
+      setIsModalOpen(false);
+    }
+  };
 
   const disconnect = useCallback(() => {
     setState({
@@ -136,9 +140,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const wasConnected = localStorage.getItem('setu_wallet_connected');
     if (wasConnected === 'true') {
-      setTimeout(() => connect(), 0);
+      setTimeout(() => connectFreighter(), 0);
     }
-  }, [connect]);
+  }, [connectFreighter]);
 
   // Periodic balance refresh
   useEffect(() => {
@@ -159,6 +163,82 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   return (
     <WalletContext.Provider value={value}>
       {children}
+      
+      {/* Wallet Selection Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setIsModalOpen(false)}>
+          <div 
+            className="w-full max-w-md glass-panel rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200" 
+            onClick={e => e.stopPropagation()}
+            style={{ border: '1px solid var(--border-primary)', background: 'linear-gradient(180deg, var(--bg-secondary), rgba(10, 10, 10, 0.95))' }}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-[var(--text-primary)]">Connect Wallet</h2>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-[var(--text-secondary)] text-sm mb-6">Select a Stellar wallet to connect to Setu.</p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => handleWalletSelect('freighter')}
+                className="flex items-center justify-between p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:bg-[rgba(57,255,20,0.05)] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(57,255,20,0.3)] group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center p-2 border border-[rgba(255,255,255,0.1)] group-hover:border-[var(--neon-green)] transition-colors">
+                    {/* Freighter Logo SVG / Placeholder */}
+                    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-[var(--text-primary)] group-hover:text-[var(--neon-green)] transition-colors"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--neon-green)] transition-colors">Freighter</div>
+                    <div className="text-xs text-[var(--text-secondary)]">Fully integrated</div>
+                  </div>
+                </div>
+                <div className="text-[var(--neon-green)] text-xs font-semibold px-2 py-1 rounded bg-[rgba(57,255,20,0.1)] opacity-0 group-hover:opacity-100 transition-opacity">Popular</div>
+              </button>
+              
+              <button 
+                onClick={() => handleWalletSelect('xBull')}
+                className="flex items-center justify-between p-4 rounded-xl transition-all duration-300 hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100 group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center border border-[rgba(255,255,255,0.1)]">
+                    <span className="font-bold text-[var(--text-primary)]">xB</span>
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-[var(--text-primary)]">xBull Wallet</div>
+                    <div className="text-xs text-[var(--text-secondary)]">Stellar ecosystem wallet</div>
+                  </div>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => handleWalletSelect('Albedo')}
+                className="flex items-center justify-between p-4 rounded-xl transition-all duration-300 hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100 group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center border border-[rgba(255,255,255,0.1)]">
+                    <span className="font-bold text-[var(--text-primary)]">A</span>
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-[var(--text-primary)]">Albedo</div>
+                    <div className="text-xs text-[var(--text-secondary)]">Browser-based wallet</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+            
+            <div className="mt-6 text-center text-xs text-[var(--text-secondary)]">
+              By connecting a wallet, you agree to Setu&apos;s Terms of Service.
+            </div>
+          </div>
+        </div>
+      )}
     </WalletContext.Provider>
   );
 }
