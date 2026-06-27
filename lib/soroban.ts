@@ -136,3 +136,21 @@ export async function fundInvoiceOnChain(investor: string, invoice_id: bigint) {
   if (!tx.built) throw new Error("Failed to build transaction");
   return await signAndSubmit(tx.built.toXDR());
 }
+
+export async function approveKYCOnChain(admin: string, investor: string) {
+  const tx = await invoiceClient.approve_kyc({ admin, investor });
+  if (!tx.built) throw new Error("Failed to build approve_kyc transaction");
+  return await signAndSubmit(tx.built.toXDR());
+}
+
+export async function revokeKYCOnChain(admin: string, investor: string) {
+  const tx = await invoiceClient.revoke_kyc({ admin, investor });
+  if (!tx.built) throw new Error("Failed to build revoke_kyc transaction");
+  return await signAndSubmit(tx.built.toXDR());
+}
+
+export async function checkKYCOnChain(investor: string): Promise<boolean> {
+  const tx = await invoiceClient.is_kyc_approved({ investor });
+  if (!tx.result) return false;
+  return tx.result;
+}

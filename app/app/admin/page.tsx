@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useWallet } from '@/lib/wallet-context';
 import { useInvoiceStore } from '@/lib/invoice-store';
-import { addKYC, removeKYC, shortenAddress } from '@/lib/stellar';
+import { shortenAddress } from '@/lib/stellar';
+import { approveKYCOnChain, revokeKYCOnChain } from '@/lib/soroban';
 import {
   Shield, UserCheck, UserX, Loader2, Plus, Users, Wallet,
   AlertCircle, CheckCircle, ExternalLink, Lock
@@ -31,29 +32,25 @@ export default function AdminPage() {
     setActionType(action);
 
     try {
-      let result;
+      let txHash: string;
       if (action === 'add') {
-        result = await addKYC(publicKey, address, `SETU-KYC-ADD-${Date.now()}`);
-      } else {
-        result = await removeKYC(publicKey, address, `SETU-KYC-RM-${Date.now()}`);
-      }
-
-      if (result.success) {
+        txHash = await approveKYCOnChain(publicKey, address);
         addNotification(
           'success',
-          action === 'add' ? 'KYC Added' : 'KYC Removed',
-          `Successfully ${action === 'add' ? 'authorized' : 'revoked'} address on-chain.`
+          'KYC Approved On-Chain',
+          `Investor ${shortenAddress(address)} is now KYC approved. Tx: ${txHash.slice(0, 8)}...`
         );
-        
-        // Update mock list
-        if (action === 'add') {
-          setKycList([{ address: shortenAddress(address), addedAt: new Date().toISOString(), status: 'active' }, ...kycList]);
-        }
-        
-        setAddress('');
+        setKycList(prev => [{ address: address, addedAt: new Date().toISOString(), status: 'active' }, ...prev]);
       } else {
-        addNotification('error', 'Action Failed', result.error || 'Unknown error');
+        txHash = await revokeKYCOnChain(publicKey, address);
+        addNotification(
+          'success',
+          'KYC Revoked On-Chain',
+          `Investor ${shortenAddress(address)} KYC has been revoked. Tx: ${txHash.slice(0, 8)}...`
+        );
+        setKycList(prev => prev.filter(r => r.address !== address));
       }
+      setAddress('');
     } catch (error) {
       addNotification('error', 'Transaction Failed', error instanceof Error ? error.message : 'Unknown error');
     } finally {
