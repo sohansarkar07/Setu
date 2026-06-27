@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { getAccountBalance, shortenAddress, NETWORK } from './stellar';
+import albedo from '@albedo-link/intent';
 
 interface WalletState {
   publicKey: string | null;
@@ -122,7 +123,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         throw new Error('Wallet connection requires a browser environment.');
       }
 
-      const albedo = (await import('@albedo-link/intent')).default;
       const res = await albedo.publicKey({});
       const publicKey = res.pubkey;
       

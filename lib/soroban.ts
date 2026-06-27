@@ -2,6 +2,7 @@ import { Client as InvoiceClient, networks as invoiceNetworks } from 'invoice-cl
 import { Client as TokenClient, networks as tokenNetworks } from 'token-client';
 import { isConnected, requestAccess, signTransaction } from '@stellar/freighter-api';
 import { rpc, xdr } from '@stellar/stellar-sdk';
+import albedo from '@albedo-link/intent';
 
 const RPC_URL = 'https://soroban-testnet.stellar.org';
 const NETWORK_PASSPHRASE = invoiceNetworks.testnet.networkPassphrase;
@@ -42,7 +43,6 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
   let signedTx = '';
 
   if (activeWallet === 'albedo') {
-    const albedo = (await import('@albedo-link/intent')).default;
     try {
       const res = await albedo.tx({ xdr: xdrString, network: 'testnet' });
       signedTx = res.signed_envelope_xdr;
