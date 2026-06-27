@@ -11,7 +11,7 @@ interface WalletState {
   tokens: { asset: string; balance: string }[];
   network: string;
   error: string | null;
-  activeWallet: 'freighter' | 'albedo' | null;
+  activeWallet: 'freighter' | 'albedo' | 'xbull' | null;
 }
 
 interface WalletContextType extends WalletState {
@@ -159,11 +159,60 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const connectXbull = useCallback(async () => {
+    setIsModalOpen(false);
+    setState(prev => ({ ...prev, isConnecting: true, error: null }));
+    
+    try {
+      if (typeof window === 'undefined') {
+        throw new Error('Wallet connection requires a browser environment.');
+      }
+
+      const { xBullWalletConnect } = await import('@creit.tech/xbull-wallet-connect');
+      const xbull = new xBullWalletConnect();
+      
+      const publicKey = await xbull.connect();
+      
+      let xlmBalance = 0;
+      let tokens: { asset: string; balance: string }[] = [];
+      try {
+        const balances = await getAccountBalance(publicKey);
+        xlmBalance = parseFloat(balances.xlm) || 0;
+        tokens = balances.tokens;
+      } catch {
+        console.warn('Account not funded on testnet yet');
+      }
+      
+      setState({
+        publicKey,
+        isConnected: true,
+        isConnecting: false,
+        xlmBalance,
+        tokens,
+        network: NETWORK,
+        error: null,
+        activeWallet: 'xbull',
+      });
+
+      localStorage.setItem('setu_wallet_connected', 'xbull');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to connect xBull';
+      setState(prev => ({
+        ...prev,
+        isConnecting: false,
+        error: message,
+      }));
+      console.error('xBull connection error:', error);
+    }
+  }, []);
+
   const handleWalletSelect = (wallet: string) => {
     if (wallet === 'freighter') {
       connectFreighter();
     } else if (wallet === 'albedo') {
       connectAlbedo();
+    } else if (wallet === 'xbull') {
+      connectXbull();
     } else {
       setState(prev => ({ ...prev, error: `${wallet} integration coming soon!` }));
       setIsModalOpen(false);
@@ -195,8 +244,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setTimeout(() => connectFreighter(), 0);
     } else if (connectedWallet === 'albedo') {
       setTimeout(() => connectAlbedo(), 0);
+    } else if (connectedWallet === 'xbull') {
+      setTimeout(() => connectXbull(), 0);
     }
-  }, [connectFreighter, connectAlbedo]);
+  }, [connectFreighter, connectAlbedo, connectXbull]);
 
   // Periodic balance refresh
   useEffect(() => {
@@ -257,8 +308,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
               </button>
               
               <button 
-                onClick={() => handleWalletSelect('xBull')}
-                className="flex items-center justify-between p-4 rounded-xl transition-all duration-300 hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.05)] opacity-70 hover:opacity-100 group"
+                onClick={() => handleWalletSelect('xbull')}
+                className="flex items-center justify-between p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.3)] group"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center border border-[rgba(255,255,255,0.1)]">

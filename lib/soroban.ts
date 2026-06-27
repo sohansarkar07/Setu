@@ -50,6 +50,15 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       const msg = e instanceof Error ? e.message : String(e);
       throw new Error(`Albedo Transaction Rejected: ${msg}`);
     }
+  } else if (activeWallet === 'xbull') {
+    const { xBullWalletConnect } = await import('@creit.tech/xbull-wallet-connect');
+    const xbull = new xBullWalletConnect();
+    try {
+      signedTx = await xbull.sign({ xdr: xdrString, network: 'TESTNET' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`xBull Transaction Rejected: ${msg}`);
+    }
   } else {
     // Default to Freighter
     const signedResponse = await signTransaction(xdrString, {
