@@ -17,11 +17,8 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [actionType, setActionType] = useState<'add' | 'remove' | null>(null);
 
-  // Mock list of KYC'd addresses for demo
-  const [kycList, setKycList] = useState([
-    { address: 'GBX7V...9Q2A', addedAt: '2023-10-01T12:00:00.000Z', status: 'active' },
-    { address: 'GAT3C...4M1B', addedAt: '2023-09-28T12:00:00.000Z', status: 'active' },
-  ]);
+  // Initialize empty list of KYC'd addresses
+  const [kycList, setKycList] = useState<{address: string, addedAt: string, status: string}[]>([]);
 
   const handleAction = async (action: 'add' | 'remove') => {
     if (!publicKey) return;
