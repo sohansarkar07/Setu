@@ -136,7 +136,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const wasConnected = localStorage.getItem('setu_wallet_connected');
     if (wasConnected === 'true') {
-      connect();
+      setTimeout(() => connect(), 0);
     }
   }, [connect]);
 

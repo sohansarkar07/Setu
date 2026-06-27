@@ -82,7 +82,7 @@ export default function RequestsPage() {
             </div>
             <h3 className="text-xl font-bold mb-2">No Pending Requests</h3>
             <p className="text-sm max-w-md mx-auto leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              You don't have any invoices waiting for your approval. When a supplier lists you as a buyer, it will appear here.
+              You don&apos;t have any invoices waiting for your approval. When a supplier lists you as a buyer, it will appear here.
             </p>
           </div>
         ) : (
@@ -180,7 +180,7 @@ export default function RequestsPage() {
         <div>
           <h4 className="text-sm font-bold mb-1" style={{ color: 'var(--neon-cyan)' }}>What does approval mean?</h4>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            By approving an invoice, you cryptographically sign a transaction confirming that the invoice is valid and you intend to pay it by the due date. This creates a "Digital Handshake" that gives investors confidence to fund the supplier immediately.
+            By approving an invoice, you cryptographically sign a transaction confirming that the invoice is valid and you intend to pay it by the due date. This creates a &quot;Digital Handshake&quot; that gives investors confidence to fund the supplier immediately.
           </p>
         </div>
       </div>

@@ -205,7 +205,7 @@ export default function PortfolioPage() {
                   <Coins size={24} style={{ color: 'var(--text-muted)' }} />
                 </div>
                 <div className="text-sm font-bold mb-1">No Investments</div>
-                <div className="text-xs leading-relaxed mb-6" style={{ color: 'var(--text-muted)' }}>You haven't funded any invoices yet.</div>
+                <div className="text-xs leading-relaxed mb-6" style={{ color: 'var(--text-muted)' }}>You haven&apos;t funded any invoices yet.</div>
                 <a href="/app/marketplace" className="btn-outline text-xs py-2 px-4 inline-flex items-center gap-1.5" style={{ color: 'var(--neon-cyan)', borderColor: 'rgba(0,240,255,0.3)' }}>
                   Browse Marketplace
                 </a>

@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { useWallet } from '@/lib/wallet-context';
 import { sendXLMTransaction, getTransactionHistory } from '@/lib/stellar';
 import {
-  Send, Wallet, AlertCircle, CheckCircle, Loader2,
-  ExternalLink, Clock, Copy, ArrowRight, User, DollarSign,
-  FileText
+  Send, Wallet, AlertCircle, CheckCircle, Copy, User, DollarSign, FileText, Loader2, Clock, ExternalLink
 } from 'lucide-react';
 
 interface TxRecord {

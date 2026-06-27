@@ -19,8 +19,8 @@ export default function AdminPage() {
 
   // Mock list of KYC'd addresses for demo
   const [kycList, setKycList] = useState([
-    { address: 'GBX7V...9Q2A', addedAt: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'active' },
-    { address: 'GAT3C...4M1B', addedAt: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'active' },
+    { address: 'GBX7V...9Q2A', addedAt: '2023-10-01T12:00:00.000Z', status: 'active' },
+    { address: 'GAT3C...4M1B', addedAt: '2023-09-28T12:00:00.000Z', status: 'active' },
   ]);
 
   const handleAction = async (action: 'add' | 'remove') => {

@@ -1,6 +1,6 @@
 import { Client as InvoiceClient, networks as invoiceNetworks } from 'invoice-client';
 import { Client as TokenClient, networks as tokenNetworks } from 'token-client';
-import { isConnected, requestAccess, signTransaction, setAllowed } from '@stellar/freighter-api';
+import { isConnected, requestAccess, signTransaction } from '@stellar/freighter-api';
 import { rpc, xdr } from '@stellar/stellar-sdk';
 
 const RPC_URL = 'https://soroban-testnet.stellar.org';
@@ -37,7 +37,7 @@ export async function connectWallet(): Promise<string> {
 /**
  * Sign and submit XDR to Soroban
  */
-export async function signAndSubmit(xdrString: string, publicKey: string): Promise<string> {
+export async function signAndSubmit(xdrString: string): Promise<string> {
   // Sign the transaction via Freighter
   const signedResponse = await signTransaction(xdrString, {
     network: 'TESTNET',
@@ -50,7 +50,7 @@ export async function signAndSubmit(xdrString: string, publicKey: string): Promi
 
   // Submit to network
   const tx = xdr.TransactionEnvelope.fromXDR(signedResponse.signedTx, 'base64');
-  let response = await server.sendTransaction(tx);
+  const response = await server.sendTransaction(tx);
   
   if (response.status === 'ERROR') {
     throw new Error(`Network Error: Transaction failed to submit. ${response.errorResultXdr}`);
@@ -82,7 +82,7 @@ export async function mintInvoiceOnChain(
   const tx = await invoiceClient.mint_invoice({ supplier, buyer, amount, description, due_date });
   if (!tx.built) throw new Error("Failed to build transaction");
   
-  const hash = await signAndSubmit(tx.built.toXDR(), supplier);
+  const hash = await signAndSubmit(tx.built.toXDR());
   // Re-fetch to get the return value (invoice ID)
   // Since we don't strictly need it for the mock UI right now, we just return the hash
   return hash;
@@ -91,11 +91,11 @@ export async function mintInvoiceOnChain(
 export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint) {
   const tx = await invoiceClient.verify_invoice({ buyer, invoice_id });
   if (!tx.built) throw new Error("Failed to build transaction");
-  return await signAndSubmit(tx.built.toXDR(), buyer);
+  return await signAndSubmit(tx.built.toXDR());
 }
 
 export async function fundInvoiceOnChain(investor: string, invoice_id: bigint) {
   const tx = await invoiceClient.fund_invoice({ investor, invoice_id });
   if (!tx.built) throw new Error("Failed to build transaction");
-  return await signAndSubmit(tx.built.toXDR(), investor);
+  return await signAndSubmit(tx.built.toXDR());
 }

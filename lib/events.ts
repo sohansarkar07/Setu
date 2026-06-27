@@ -1,5 +1,5 @@
 import { server } from './soroban';
-import type { rpc as RpcType } from '@stellar/stellar-sdk';
+import type { rpc } from '@stellar/stellar-sdk';
 
 const INVOICE_CONTRACT_ID = process.env.NEXT_PUBLIC_INVOICE_CONTRACT_ID!;
 

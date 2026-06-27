@@ -181,9 +181,9 @@ export function formatXLM(amount: string): string {
 // Mock functions for UI demonstrations
 
 export async function verifyInvoiceSignature(
-  publicKey: string,
-  invoiceId: string,
-  memo?: string
+  _publicKey: string,
+  _invoiceId: string,
+  _memo?: string
 ): Promise<{ success: boolean; hash?: string; error?: string }> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -191,10 +191,10 @@ export async function verifyInvoiceSignature(
 }
 
 export async function fundInvoice(
-  publicKey: string,
-  supplierAddress: string,
-  amount: string,
-  memo?: string
+  _publicKey: string,
+  _supplierAddress: string,
+  _amount: string,
+  _memo?: string
 ): Promise<{ success: boolean; hash?: string; error?: string }> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -202,9 +202,9 @@ export async function fundInvoice(
 }
 
 export async function addKYC(
-  adminPublicKey: string,
-  investorPublicKey: string,
-  memo?: string
+  _adminPublicKey: string,
+  _investorPublicKey: string,
+  _memo?: string
 ): Promise<{ success: boolean; hash?: string; error?: string }> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -212,9 +212,9 @@ export async function addKYC(
 }
 
 export async function removeKYC(
-  adminPublicKey: string,
-  investorPublicKey: string,
-  memo?: string
+  _adminPublicKey: string,
+  _investorPublicKey: string,
+  _memo?: string
 ): Promise<{ success: boolean; hash?: string; error?: string }> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1500));

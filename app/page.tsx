@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
 import {
-  Zap, Shield, ArrowRight, Globe, Clock, CheckCircle,
-  FileText, Users, TrendingUp, Lock, Wallet, ChevronDown,
+  Zap, Shield, ArrowRight, Globe, CheckCircle,
+  FileText, Users, Lock, Wallet, ChevronDown,
   ArrowUpRight, Layers, Eye, Coins
 } from 'lucide-react';
 
