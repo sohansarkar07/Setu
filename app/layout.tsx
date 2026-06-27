@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { ErrorBoundary } from '@/components/error-boundary';
 import { WalletProvider } from "@/lib/wallet-context";
 import { InvoiceStoreProvider } from "@/lib/invoice-store";
 
@@ -38,11 +39,13 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
     >
       <body className="w-full min-h-full flex flex-col antialiased overflow-x-hidden" style={{ fontFamily: 'var(--font-inter), Inter, sans-serif' }}>
-        <WalletProvider>
-          <InvoiceStoreProvider>
-            {children}
-          </InvoiceStoreProvider>
-        </WalletProvider>
+        <ErrorBoundary>
+          <WalletProvider>
+            <InvoiceStoreProvider>
+              {children}
+            </InvoiceStoreProvider>
+          </WalletProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
