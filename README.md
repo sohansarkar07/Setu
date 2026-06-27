@@ -210,6 +210,23 @@ Setu/
 
 ---
 
+## 📸 Visual Proofs (Level 3 Submission)
+
+### 1. Smart Contract Check
+*These screenshots confirm the successful deployment of our WebAssembly (WASM) smart contracts on the Stellar Soroban network.*
+<p align="center">
+  <img src="./smartcontractpic/contract_proof_1.png" alt="Smart Contract Deployment Proof 1" width="45%" />
+  <img src="./smartcontractpic/contract_proof_2.png" alt="Smart Contract Deployment Proof 2" width="45%" />
+</p>
+
+### 2. CI/CD Pipeline Green Status
+*This screenshot confirms our automated GitHub Actions workflow successfully runs frontend builds and smart contract unit tests.*
+<p align="center">
+  <img src="./ci/ci/cd%20proof/image.png" alt="CI/CD Pipeline Success" width="80%" />
+</p>
+
+---
+
 <a name="error-handling"></a>
 ## ⚠️ Error Handling (3 Types)
 
