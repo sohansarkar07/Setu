@@ -2,7 +2,13 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { getAccountBalance, shortenAddress, NETWORK } from './stellar';
-import albedo from '@albedo-link/intent';
+
+let albedoInstance: any = null;
+if (typeof window !== 'undefined') {
+  import('@albedo-link/intent').then(module => {
+    albedoInstance = module.default;
+  }).catch(err => console.error("Failed to load albedo", err));
+}
 
 interface WalletState {
   publicKey: string | null;
@@ -123,7 +129,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         throw new Error('Wallet connection requires a browser environment.');
       }
 
-      const res = await albedo.publicKey({});
+      if (!albedoInstance) {
+        throw new Error('Albedo SDK not loaded yet. Please try again.');
+      }
+      const res = await albedoInstance.publicKey({});
       const publicKey = res.pubkey;
       
       let xlmBalance = 0;

@@ -2,7 +2,13 @@ import { Client as InvoiceClient, networks as invoiceNetworks } from 'invoice-cl
 import { Client as TokenClient, networks as tokenNetworks } from 'token-client';
 import { isConnected, requestAccess, signTransaction } from '@stellar/freighter-api';
 import { rpc, xdr } from '@stellar/stellar-sdk';
-import albedo from '@albedo-link/intent';
+
+let albedoInstance: any = null;
+if (typeof window !== 'undefined') {
+  import('@albedo-link/intent').then(module => {
+    albedoInstance = module.default;
+  }).catch(err => console.error("Failed to load albedo", err));
+}
 
 const RPC_URL = 'https://soroban-testnet.stellar.org';
 const NETWORK_PASSPHRASE = invoiceNetworks.testnet.networkPassphrase;
@@ -44,7 +50,10 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
 
   if (activeWallet === 'albedo') {
     try {
-      const res = await albedo.tx({ xdr: xdrString, network: 'testnet' });
+      if (!albedoInstance) {
+        throw new Error('Albedo SDK not loaded yet. Please try again.');
+      }
+      const res = await albedoInstance.tx({ xdr: xdrString, network: 'testnet' });
       signedTx = res.signed_envelope_xdr;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
