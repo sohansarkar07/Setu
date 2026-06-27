@@ -215,8 +215,8 @@ Setu/
 ### 1. Smart Contract Check
 *These screenshots confirm the successful deployment of our WebAssembly (WASM) smart contracts on the Stellar Soroban network.*
 <p align="center">
-  <img src="./smartcontractpic/contract_proof_1.png" alt="Smart Contract Deployment Proof 1" width="45%" />
-  <img src="./smartcontractpic/contract_proof_2.png" alt="Smart Contract Deployment Proof 2" width="45%" />
+  <img src="./app/smartcontractpic/image.png" alt="Smart Contract Deployment Proof 1" width="45%" />
+  <img src="./app/smartcontractpic/image%20copy.png" alt="Smart Contract Deployment Proof 2" width="45%" />
 </p>
 
 ### 2. CI/CD Pipeline Green Status
