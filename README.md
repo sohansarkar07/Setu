@@ -27,6 +27,17 @@
 
   <br><br>
 
+  <!-- Application UI Screenshots -->
+  <p align="center">
+    <img src="./UI%20screenshots/Screenshot%202026-06-28%20002955.png" alt="Setu Dashboard" width="45%" style="border-radius: 10px; margin-right: 2%; margin-bottom: 2%; border: 1px solid #333" />
+    <img src="./UI%20screenshots/Screenshot%202026-06-28%20003034.png" alt="Invoice Marketplace" width="45%" style="border-radius: 10px; margin-bottom: 2%; border: 1px solid #333" />
+    <br>
+    <img src="./UI%20screenshots/Screenshot%202026-06-28%20003054.png" alt="Pending Requests" width="45%" style="border-radius: 10px; margin-right: 2%; border: 1px solid #333" />
+    <img src="./UI%20screenshots/Screenshot%202026-06-28%20003701.png" alt="Multiple Wallets Modal" width="45%" style="border-radius: 10px; border: 1px solid #333" />
+  </p>
+
+  <br><br>
+
   <a href="#problem-statement">Problem</a> •
   <a href="#solution">Solution</a> •
   <a href="#why-soroban">Why Soroban</a> •
