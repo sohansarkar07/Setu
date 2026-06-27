@@ -225,6 +225,12 @@ Setu/
   <img src="./ci/ci/cd%20proof/image.png" alt="CI/CD Pipeline Success" width="80%" />
 </p>
 
+### 3. Smart Contract Unit Tests
+*This screenshot proves all Rust-based Soroban smart contract unit tests run and pass perfectly, ensuring contract safety before deployment.*
+<p align="center">
+  <img src="./unit%20test%20proof/image.png" alt="Smart Contract Unit Tests Pass" width="80%" />
+</p>
+
 ---
 
 <a name="error-handling"></a>
