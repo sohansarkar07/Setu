@@ -11,6 +11,7 @@ interface WalletState {
   tokens: { asset: string; balance: string }[];
   network: string;
   error: string | null;
+  activeWallet: 'freighter' | 'albedo' | null;
 }
 
 interface WalletContextType extends WalletState {
@@ -32,6 +33,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     tokens: [],
     network: NETWORK,
     error: null,
+    activeWallet: null,
   });
 
   const refreshBalance = useCallback(async () => {
@@ -96,9 +98,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         tokens,
         network: NETWORK,
         error: null,
+        activeWallet: 'freighter',
       });
 
-      localStorage.setItem('setu_wallet_connected', 'true');
+      localStorage.setItem('setu_wallet_connected', 'freighter');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to connect wallet';
       setState(prev => ({
@@ -110,9 +113,57 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const connectAlbedo = useCallback(async () => {
+    setIsModalOpen(false);
+    setState(prev => ({ ...prev, isConnecting: true, error: null }));
+    
+    try {
+      if (typeof window === 'undefined') {
+        throw new Error('Wallet connection requires a browser environment.');
+      }
+
+      const albedo = (await import('@albedo-link/intent')).default;
+      const res = await albedo.publicKey({});
+      const publicKey = res.pubkey;
+      
+      let xlmBalance = 0;
+      let tokens: { asset: string; balance: string }[] = [];
+      try {
+        const balances = await getAccountBalance(publicKey);
+        xlmBalance = parseFloat(balances.xlm) || 0;
+        tokens = balances.tokens;
+      } catch {
+        console.warn('Account not funded on testnet yet');
+      }
+      
+      setState({
+        publicKey,
+        isConnected: true,
+        isConnecting: false,
+        xlmBalance,
+        tokens,
+        network: NETWORK,
+        error: null,
+        activeWallet: 'albedo',
+      });
+
+      localStorage.setItem('setu_wallet_connected', 'albedo');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to connect Albedo';
+      setState(prev => ({
+        ...prev,
+        isConnecting: false,
+        error: message,
+      }));
+      console.error('Albedo connection error:', error);
+    }
+  }, []);
+
   const handleWalletSelect = (wallet: string) => {
     if (wallet === 'freighter') {
       connectFreighter();
+    } else if (wallet === 'albedo') {
+      connectAlbedo();
     } else {
       setState(prev => ({ ...prev, error: `${wallet} integration coming soon!` }));
       setIsModalOpen(false);
@@ -128,6 +179,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       tokens: [],
       network: NETWORK,
       error: null,
+      activeWallet: null,
     });
     localStorage.removeItem('setu_wallet_connected');
   }, []);
@@ -138,11 +190,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Auto-reconnect on mount
   useEffect(() => {
-    const wasConnected = localStorage.getItem('setu_wallet_connected');
-    if (wasConnected === 'true') {
+    const connectedWallet = localStorage.getItem('setu_wallet_connected');
+    if (connectedWallet === 'freighter' || connectedWallet === 'true') {
       setTimeout(() => connectFreighter(), 0);
+    } else if (connectedWallet === 'albedo') {
+      setTimeout(() => connectAlbedo(), 0);
     }
-  }, [connectFreighter]);
+  }, [connectFreighter, connectAlbedo]);
 
   // Periodic balance refresh
   useEffect(() => {

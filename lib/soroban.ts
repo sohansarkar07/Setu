@@ -38,18 +38,33 @@ export async function connectWallet(): Promise<string> {
  * Sign and submit XDR to Soroban
  */
 export async function signAndSubmit(xdrString: string): Promise<string> {
-  // Sign the transaction via Freighter
-  const signedResponse = await signTransaction(xdrString, {
-    network: 'TESTNET',
-    networkPassphrase: NETWORK_PASSPHRASE,
-  });
-  
-  if (signedResponse.error) {
-    throw new Error(`Transaction Rejected by User: ${signedResponse.error}`);
+  const activeWallet = typeof window !== 'undefined' ? localStorage.getItem('setu_wallet_connected') : 'freighter';
+  let signedTx = '';
+
+  if (activeWallet === 'albedo') {
+    const albedo = (await import('@albedo-link/intent')).default;
+    try {
+      const res = await albedo.tx({ xdr: xdrString, network: 'testnet' });
+      signedTx = res.signed_envelope_xdr;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`Albedo Transaction Rejected: ${msg}`);
+    }
+  } else {
+    // Default to Freighter
+    const signedResponse = await signTransaction(xdrString, {
+      network: 'TESTNET',
+      networkPassphrase: NETWORK_PASSPHRASE,
+    });
+    
+    if (signedResponse.error) {
+      throw new Error(`Transaction Rejected by User: ${signedResponse.error}`);
+    }
+    signedTx = signedResponse.signedTx;
   }
 
   // Submit to network
-  const tx = xdr.TransactionEnvelope.fromXDR(signedResponse.signedTx, 'base64');
+  const tx = xdr.TransactionEnvelope.fromXDR(signedTx, 'base64');
   const response = await server.sendTransaction(tx);
   
   if (response.status === 'ERROR') {
