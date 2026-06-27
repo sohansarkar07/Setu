@@ -7,23 +7,56 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  # ─── Rust Smart Contract Tests ──────────────────────────────────────────────
+  contract-tests:
+    name: Smart Contract Tests
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          contracts/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('contracts/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Run contract unit tests
+      working-directory: contracts
+      run: cargo test --verbose
+
+  # ─── Next.js Frontend Build ─────────────────────────────────────────────────
+  frontend-build:
+    name: Frontend Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
-        
+
     - name: Install dependencies
       run: npm install
-      
+
     - name: Build Next.js app
       run: npm run build
-      
+      env:
+        NEXT_PUBLIC_INVOICE_CONTRACT_ID: CDWDT2VG2LSHG6D2JIEPN43UWF6NF3K5VV5RGDNIT2KF5NJJ3BWZEZIM
+        NEXT_PUBLIC_TOKEN_CONTRACT_ID: CCMEDRG2QBTQA27BPU4DAFOEWW2Q7WNINN6NZX4UUEBYBDJUG47THZP7
+
     - name: Run Linting
       run: npm run lint
