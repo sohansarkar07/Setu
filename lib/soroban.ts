@@ -76,7 +76,6 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
     // Default to Freighter
     const signedResponse = await signTransaction(xdrString, {
       network: 'TESTNET',
-      networkPassphrase: NETWORK_PASSPHRASE,
     });
     
     if (typeof signedResponse === 'object' && 'error' in signedResponse && signedResponse.error) {

@@ -82,6 +82,13 @@ export default function MintInvoicePage() {
       setAmount('');
       setDueDate('');
       setBuyerAddress('');
+    } catch (error: any) {
+      console.error("Minting failed:", error);
+      addNotification('error', 'Minting Failed', error?.message || 'An unknown error occurred during minting');
+      setMintResult({
+        success: false,
+        error: error?.message || 'Transaction failed'
+      });
     } finally {
       setIsMinting(false);
     }
