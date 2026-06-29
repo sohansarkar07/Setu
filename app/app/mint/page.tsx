@@ -82,6 +82,7 @@ export default function MintInvoicePage() {
       setAmount('');
       setDueDate('');
       setBuyerAddress('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Minting failed:", error);
       addNotification('error', 'Minting Failed', error?.message || 'An unknown error occurred during minting');

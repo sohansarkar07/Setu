@@ -84,11 +84,12 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       const source = tx.v1()?.tx().sourceAccount().ed25519();
       if (source) {
         import('@stellar/stellar-sdk').then(({ StrKey }) => {
-          // We could parse it, but it's easier to just rely on the active wallet for now,
-          // or we can just pass the globally available active wallet from localStorage if possible.
-        });
+          // We could parse it, but it's easier to just rely on the active wallet for now.
+        }).catch(() => {});
       }
-    } catch(e) {}
+    } catch (e) {
+      // ignore
+    }
     
     // Default to Freighter
     const signedResponse = await signTransaction(xdrString, {
@@ -96,10 +97,13 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       networkPassphrase: NETWORK_PASSPHRASE,
     });
     
-    if (typeof signedResponse === 'object' && 'error' in signedResponse && signedResponse.error) {
-      const errMsg = typeof signedResponse.error === 'string' 
-        ? signedResponse.error 
-        : JSON.stringify(signedResponse.error);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const responseObj = signedResponse as any;
+
+    if (typeof signedResponse === 'object' && 'error' in responseObj && responseObj.error) {
+      const errMsg = typeof responseObj.error === 'string' 
+        ? responseObj.error 
+        : JSON.stringify(responseObj.error);
       throw new Error(`Freighter Error: ${errMsg}`);
     }
     
@@ -108,11 +112,11 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
     if (typeof signedResponse === 'string') {
       signedTx = signedResponse;
     } else {
-      signedTx = (signedResponse as any).signedTx 
-        || (signedResponse as any).transactionXdr 
-        || (signedResponse as any).signedTransaction
-        || (signedResponse as any).tx
-        || (signedResponse as any).xdr;
+      signedTx = responseObj.signedTx 
+        || responseObj.transactionXdr 
+        || responseObj.signedTransaction
+        || responseObj.tx
+        || responseObj.xdr;
     }
     
     if (!signedTx) {

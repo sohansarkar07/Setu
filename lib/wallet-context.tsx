@@ -80,6 +80,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const freighterApi = await import('@stellar/freighter-api');
       
       const connected = await freighterApi.isConnected();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const isWalletConnected = typeof connected === 'object' ? (connected as any).isConnected : connected;
       
       if (!isWalletConnected) {
@@ -92,10 +93,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (typeof accessResult === 'string') {
         publicKey = accessResult;
       } else {
-        if ((accessResult as any).error) {
-          throw new Error((accessResult as any).error.message || (accessResult as any).error || 'Could not connect to Freighter.');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = accessResult as any;
+        if (res.error) {
+          throw new Error(res.error.message || res.error || 'Could not connect to Freighter.');
         }
-        publicKey = (accessResult as any).address || (accessResult as any).publicKey;
+        publicKey = res.address || res.publicKey;
       }
 
       if (!publicKey) {
