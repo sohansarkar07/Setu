@@ -27,19 +27,28 @@ export default function RequestsPage() {
     setVerifyingId(invoiceId);
 
     try {
-      // Real on-chain Soroban transaction
-      const numericId = parseInt(invoiceId.replace('INV-', ''));
+      // Parse on-chain invoice ID - strip INV- prefix, parse as integer
+      // On-chain IDs are 0-indexed (first invoice = 0)
+      const numericStr = invoiceId.replace('INV-', '');
+      const numericId = parseInt(numericStr, 10);
+      
+      if (isNaN(numericId)) {
+        throw new Error(`Invalid invoice ID format: ${invoiceId}`);
+      }
+      
+      // Try on-chain ID as-is first (0-based), the contract stores from ID 1 typically
       const txHash = await verifyInvoiceOnChain(publicKey, BigInt(numericId));
 
       verifyInvoice(invoiceId, txHash);
       addNotification(
         'success',
         'Verification Complete',
-        `Invoice ${invoiceId} has been cryptographically verified on-chain.`
+        `Invoice ${invoiceId} has been cryptographically verified on-chain. TX: ${txHash.slice(0, 8)}...`
       );
     } catch (error) {
       console.error(error);
-      addNotification('error', 'Verification Failed', error instanceof Error ? error.message : 'Transaction failed');
+      const msg = error instanceof Error ? error.message : 'Transaction failed to submit. undefined';
+      addNotification('error', 'Verification Failed', msg);
     } finally {
       setVerifyingId(null);
     }
