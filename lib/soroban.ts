@@ -17,10 +17,14 @@ if (typeof window !== 'undefined') {
 const RPC_URL = 'https://soroban-testnet.stellar.org';
 const NETWORK_PASSPHRASE = invoiceNetworks.testnet.networkPassphrase;
 
-export const invoiceClient = new InvoiceClient({
-  ...invoiceNetworks.testnet,
-  rpcUrl: RPC_URL,
-});
+export function getInvoiceClient(publicKey?: string) {
+  return new InvoiceClient({
+    ...invoiceNetworks.testnet,
+    rpcUrl: RPC_URL,
+    ...(publicKey ? { publicKey } : {}),
+  });
+}
+
 
 export const tokenClient = new TokenClient({
   ...tokenNetworks.testnet,
@@ -118,7 +122,8 @@ export async function mintInvoiceOnChain(
   description: string, 
   due_date: bigint
 ) {
-  const tx = await invoiceClient.mint_invoice({ supplier, buyer, amount, description, due_date });
+  const client = getInvoiceClient(supplier);
+  const tx = await client.mint_invoice({ supplier, buyer, amount, description, due_date });
   if (!tx.built) throw new Error("Failed to build transaction");
   
   const hash = await signAndSubmit(tx.built.toXDR());
@@ -128,31 +133,36 @@ export async function mintInvoiceOnChain(
 }
 
 export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint) {
-  const tx = await invoiceClient.verify_invoice({ buyer, invoice_id });
+  const client = getInvoiceClient(buyer);
+  const tx = await client.verify_invoice({ buyer, invoice_id });
   if (!tx.built) throw new Error("Failed to build transaction");
   return await signAndSubmit(tx.built.toXDR());
 }
 
 export async function fundInvoiceOnChain(investor: string, invoice_id: bigint) {
-  const tx = await invoiceClient.fund_invoice({ investor, invoice_id });
+  const client = getInvoiceClient(investor);
+  const tx = await client.fund_invoice({ investor, invoice_id });
   if (!tx.built) throw new Error("Failed to build transaction");
   return await signAndSubmit(tx.built.toXDR());
 }
 
 export async function approveKYCOnChain(admin: string, investor: string) {
-  const tx = await invoiceClient.approve_kyc({ admin, investor });
+  const client = getInvoiceClient(admin);
+  const tx = await client.approve_kyc({ admin, investor });
   if (!tx.built) throw new Error("Failed to build approve_kyc transaction");
   return await signAndSubmit(tx.built.toXDR());
 }
 
 export async function revokeKYCOnChain(admin: string, investor: string) {
-  const tx = await invoiceClient.revoke_kyc({ admin, investor });
+  const client = getInvoiceClient(admin);
+  const tx = await client.revoke_kyc({ admin, investor });
   if (!tx.built) throw new Error("Failed to build revoke_kyc transaction");
   return await signAndSubmit(tx.built.toXDR());
 }
 
 export async function checkKYCOnChain(investor: string): Promise<boolean> {
-  const tx = await invoiceClient.is_kyc_approved({ investor });
+  const client = getInvoiceClient();
+  const tx = await client.is_kyc_approved({ investor });
   if (!tx.result) return false;
   return tx.result;
 }
