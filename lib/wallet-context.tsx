@@ -80,8 +80,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const freighterApi = await import('@stellar/freighter-api');
       
       const connected = await freighterApi.isConnected();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const isWalletConnected = typeof connected === 'object' ? (connected as any).isConnected : connected;
+      let isWalletConnected = false;
+      if (typeof connected === 'boolean') {
+        isWalletConnected = connected;
+      } else if (typeof connected === 'object' && connected !== null) {
+        isWalletConnected = Boolean((connected as Record<string, unknown>).isConnected);
+      }
       
       if (!isWalletConnected) {
         throw new Error('Freighter wallet extension is not installed. Please install it from https://freighter.app and reload the page.');
@@ -92,13 +96,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       if (typeof accessResult === 'string') {
         publicKey = accessResult;
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = accessResult as any;
+      } else if (typeof accessResult === 'object' && accessResult !== null) {
+        const res = accessResult as Record<string, unknown>;
         if (res.error) {
-          throw new Error(res.error.message || res.error || 'Could not connect to Freighter.');
+          const errMsg = typeof res.error === 'string' ? res.error : (res.error as Error).message || 'Could not connect to Freighter.';
+          throw new Error(errMsg);
         }
-        publicKey = res.address || res.publicKey;
+        publicKey = (typeof res.address === 'string' ? res.address : '') || (typeof res.publicKey === 'string' ? res.publicKey : '');
       }
 
       if (!publicKey) {

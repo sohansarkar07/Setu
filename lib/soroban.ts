@@ -78,14 +78,11 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
     }
   } else {
     // Extract public key to pass as accountToSign if we can parse it from the transaction
-    let accountToSign = undefined;
     try {
       const tx = xdr.TransactionEnvelope.fromXDR(xdrString, 'base64');
       const source = tx.v1()?.tx().sourceAccount().ed25519();
       if (source) {
-        import('@stellar/stellar-sdk').then(({ StrKey }) => {
-          // We could parse it, but it's easier to just rely on the active wallet for now.
-        }).catch(() => {});
+        // Just acknowledging the source account logic is present
       }
     } catch (e) {
       // ignore
@@ -97,26 +94,28 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       networkPassphrase: NETWORK_PASSPHRASE,
     });
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const responseObj = signedResponse as any;
-
-    if (typeof signedResponse === 'object' && 'error' in responseObj && responseObj.error) {
-      const errMsg = typeof responseObj.error === 'string' 
-        ? responseObj.error 
-        : JSON.stringify(responseObj.error);
-      throw new Error(`Freighter Error: ${errMsg}`);
+    if (typeof signedResponse === 'object' && signedResponse !== null) {
+      const responseObj = signedResponse as Record<string, unknown>;
+      
+      if ('error' in responseObj && responseObj.error) {
+        const errMsg = typeof responseObj.error === 'string' 
+          ? responseObj.error 
+          : JSON.stringify(responseObj.error);
+        throw new Error(`Freighter Error: ${errMsg}`);
+      }
     }
     
     let signedTx = '';
     
     if (typeof signedResponse === 'string') {
       signedTx = signedResponse;
-    } else {
-      signedTx = responseObj.signedTx 
-        || responseObj.transactionXdr 
-        || responseObj.signedTransaction
-        || responseObj.tx
-        || responseObj.xdr;
+    } else if (typeof signedResponse === 'object' && signedResponse !== null) {
+      const responseObj = signedResponse as Record<string, unknown>;
+      if (typeof responseObj.signedTx === 'string') signedTx = responseObj.signedTx;
+      else if (typeof responseObj.transactionXdr === 'string') signedTx = responseObj.transactionXdr;
+      else if (typeof responseObj.signedTransaction === 'string') signedTx = responseObj.signedTransaction;
+      else if (typeof responseObj.tx === 'string') signedTx = responseObj.tx;
+      else if (typeof responseObj.xdr === 'string') signedTx = responseObj.xdr;
     }
     
     if (!signedTx) {

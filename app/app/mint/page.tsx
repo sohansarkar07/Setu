@@ -82,13 +82,13 @@ export default function MintInvoicePage() {
       setAmount('');
       setDueDate('');
       setBuyerAddress('');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error) {
       console.error("Minting failed:", error);
-      addNotification('error', 'Minting Failed', error?.message || 'An unknown error occurred during minting');
+      const errMsg = error instanceof Error ? error.message : String(error) || 'An unknown error occurred during minting';
+      addNotification('error', 'Minting Failed', errMsg);
       setMintResult({
         success: false,
-        error: error?.message || 'Transaction failed'
+        error: errMsg || 'Transaction failed'
       });
     } finally {
       setIsMinting(false);
