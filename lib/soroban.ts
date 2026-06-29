@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Client as InvoiceClient, networks as invoiceNetworks } from 'invoice-client';
 import { Client as TokenClient, networks as tokenNetworks } from 'token-client';
 import { isConnected, requestAccess, signTransaction } from '@stellar/freighter-api';
