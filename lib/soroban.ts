@@ -79,10 +79,13 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       networkPassphrase: NETWORK_PASSPHRASE,
     });
     
-    if (signedResponse.error) {
+    if (typeof signedResponse === 'object' && 'error' in signedResponse && signedResponse.error) {
       throw new Error(`Transaction Rejected by User: ${signedResponse.error}`);
     }
-    signedTx = signedResponse.signedTx;
+    
+    signedTx = typeof signedResponse === 'string' 
+      ? signedResponse 
+      : (signedResponse as any).signedTx || (signedResponse as any).transactionXdr || (signedResponse as any).signedTransaction;
   }
 
   // Submit to network
