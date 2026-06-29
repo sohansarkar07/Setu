@@ -30,6 +30,11 @@ export default function RequestsPage() {
       return;
     }
 
+    if (inv.buyer !== publicKey) {
+      addNotification('error', 'Wrong Wallet', `You must connect as the buyer (${inv.buyer.substring(0, 5)}...${inv.buyer.slice(-4)}) to approve this invoice.`);
+      return;
+    }
+
     setVerifyingId(invoiceId);
 
     try {

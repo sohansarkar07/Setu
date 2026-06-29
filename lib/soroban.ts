@@ -165,6 +165,18 @@ export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): P
     throw new Error('Invoice not found on-chain. Please mint a new invoice first.');
   }
 
+  // Validate the on-chain invoice details match the expectation
+  if (onChainInvoice.buyer !== buyer) {
+    throw new Error(`Invoice buyer mismatch. Expected ${buyer}, but on-chain invoice is for ${onChainInvoice.buyer}`);
+  }
+
+  // Check the status (status is usually an enum or number, assuming 0 or 'Draft' is the initial status)
+  // We'll stringify it to check safely
+  const statusStr = JSON.stringify(onChainInvoice.status);
+  if (!statusStr.toLowerCase().includes('draft') && statusStr !== '0') {
+    throw new Error(`Invoice is not in Draft status. Current status: ${statusStr}`);
+  }
+
   const signer = await getSigner();
   const client = getInvoiceClient(buyer);
   
