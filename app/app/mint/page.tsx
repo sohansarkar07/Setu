@@ -88,20 +88,12 @@ export default function MintInvoicePage() {
       if (error instanceof Error) {
         errMsg = error.message;
       } else if (typeof error === 'object' && error !== null) {
-        try {
-          errMsg = JSON.stringify(error);
-        } catch (e) {
-          errMsg = String(error);
-        }
+        errMsg = JSON.stringify(error);
       } else {
         errMsg = String(error);
       }
-      
-      addNotification('error', 'Minting Failed', 'VERIFIED_V1: ' + errMsg);
-      setMintResult({
-        success: false,
-        error: 'VERIFIED_V1: ' + errMsg || 'Transaction failed'
-      });
+      addNotification('error', 'Minting Failed', errMsg);
+      setMintResult({ success: false, error: errMsg });
     } finally {
       setIsMinting(false);
     }
