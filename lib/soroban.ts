@@ -1,8 +1,8 @@
-// @ts-nocheck
 import { Client as InvoiceClient, networks as invoiceNetworks } from 'invoice-client';
 import { Client as TokenClient, networks as tokenNetworks } from 'token-client';
 import { isConnected, requestAccess, signTransaction } from '@stellar/freighter-api';
 import { rpc, xdr } from '@stellar/stellar-sdk';
+import { xBullWalletConnect } from '@creit.tech/xbull-wallet-connect';
 
 interface AlbedoIntent {
   tx: (params: { xdr: string; network: string }) => Promise<{ signed_envelope_xdr: string }>;
@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
 }
 
 const RPC_URL = 'https://soroban-testnet.stellar.org';
-const NETWORK_PASSPHRASE = invoiceNetworks.testnet.networkPassphrase;
+const NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"; // Hardcoded to prevent undefined errors
 
 export function getInvoiceClient(publicKey?: string) {
   return new InvoiceClient({
@@ -27,10 +27,13 @@ export function getInvoiceClient(publicKey?: string) {
 }
 
 
-export const tokenClient = new TokenClient({
-  ...tokenNetworks.testnet,
-  rpcUrl: RPC_URL,
-});
+export function getTokenClient(publicKey?: string) {
+  return new TokenClient({
+    ...tokenNetworks.testnet,
+    rpcUrl: RPC_URL,
+    ...(publicKey ? { publicKey } : {}),
+  });
+}
 
 export const server = new rpc.Server(RPC_URL);
 
