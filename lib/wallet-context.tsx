@@ -78,20 +78,29 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
 
       const freighterApi = await import('@stellar/freighter-api');
+      
       const connected = await freighterApi.isConnected();
-      if (!connected.isConnected) {
+      const isWalletConnected = typeof connected === 'object' ? (connected as any).isConnected : connected;
+      
+      if (!isWalletConnected) {
         throw new Error('Freighter wallet extension is not installed. Please install it from https://freighter.app and reload the page.');
       }
 
       const accessResult = await freighterApi.requestAccess();
-      if (accessResult.error) {
-        throw new Error(accessResult.error.message || 'Could not connect to Freighter. Please make sure it is unlocked.');
-      }
-      if (!accessResult.address) {
-        throw new Error('Could not get wallet address. Please make sure Freighter is unlocked and try again.');
+      let publicKey = '';
+      
+      if (typeof accessResult === 'string') {
+        publicKey = accessResult;
+      } else {
+        if ((accessResult as any).error) {
+          throw new Error((accessResult as any).error.message || (accessResult as any).error || 'Could not connect to Freighter.');
+        }
+        publicKey = (accessResult as any).address || (accessResult as any).publicKey;
       }
 
-      const publicKey = accessResult.address;
+      if (!publicKey) {
+        throw new Error('Could not get wallet address. Please make sure Freighter is unlocked and try again.');
+      }
       let xlmBalance = 0;
       let tokens: { asset: string; balance: string }[] = [];
       try {
