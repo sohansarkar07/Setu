@@ -128,23 +128,24 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
 
     // Submit to network
     const tx = xdr.TransactionEnvelope.fromXDR(signedTx, 'base64');
-  const response = await server.sendTransaction(tx);
-  
-  if (response.status === 'ERROR') {
-    throw new Error(`Network Error: Transaction failed to submit. ${response.errorResultXdr}`);
-  }
+    const response = await server.sendTransaction(tx);
+    
+    if (response.status === 'ERROR') {
+      throw new Error(`Network Error: Transaction failed to submit. ${response.errorResultXdr}`);
+    }
 
-  // Poll for completion
-  let statusResponse = await server.getTransaction(response.hash);
-  while (statusResponse.status === 'NOT_FOUND') {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    statusResponse = await server.getTransaction(response.hash);
-  }
+    // Poll for completion
+    let statusResponse = await server.getTransaction(response.hash);
+    while (statusResponse.status === 'NOT_FOUND') {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      statusResponse = await server.getTransaction(response.hash);
+    }
 
-  if (statusResponse.status === 'SUCCESS') {
-    return response.hash;
-  } else {
-    throw new Error(`Contract Error: Transaction failed on-chain execution.`);
+    if (statusResponse.status === 'SUCCESS') {
+      return response.hash;
+    } else {
+      throw new Error(`Contract Error: Transaction failed on-chain execution.`);
+    }
   }
 }
 
