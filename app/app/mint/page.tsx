@@ -54,7 +54,7 @@ export default function MintInvoicePage() {
 
     try {
       // Real on-chain Soroban transaction
-      const txHash = await mintInvoiceOnChain(
+      const { txHash, chainId } = await mintInvoiceOnChain(
         publicKey,
         buyerAddress.trim(),
         BigInt(Math.floor(parsedAmount * 10_000_000)), // Convert to decimals (7)
@@ -69,6 +69,7 @@ export default function MintInvoicePage() {
         supplier: publicKey,
         buyer: buyerAddress.trim(),
         txHash: txHash,
+        chainId: chainId,
       });
 
       setMintResult({

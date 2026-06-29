@@ -2,6 +2,7 @@ export type InvoiceStatus = 'draft' | 'verified' | 'funded' | 'paid' | 'defaulte
 
 export interface Invoice {
   id: string;
+  chainId?: number;       // actual on-chain u64 invoice ID
   description: string;
   amount: number;
   dueDate: string;

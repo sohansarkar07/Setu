@@ -105,7 +105,7 @@ export async function mintInvoiceOnChain(
   amount: bigint,
   description: string,
   due_date: bigint
-): Promise<string> {
+): Promise<{ txHash: string; chainId: number }> {
   const signer = await getSigner();
   const client = getInvoiceClient(supplier);
   const assembled = await client.mint_invoice({ supplier, buyer, amount, description, due_date });
@@ -114,7 +114,13 @@ export async function mintInvoiceOnChain(
     signTransaction: signer,
   });
 
-  return assembled.sendTransactionResponse?.hash ?? assembled.sendTransactionResponse?.hash ?? 'success';
+  const txHash = assembled.sendTransactionResponse?.hash ?? 'success';
+  // The result of mint_invoice is the new invoice's on-chain u64 ID
+  const chainId = typeof assembled.result === 'bigint'
+    ? Number(assembled.result)
+    : 0;
+
+  return { txHash, chainId };
 }
 
 export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): Promise<string> {

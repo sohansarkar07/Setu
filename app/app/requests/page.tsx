@@ -24,20 +24,20 @@ export default function RequestsPage() {
   const handleVerify = async (invoiceId: string) => {
     if (!publicKey) return;
 
+    const inv = invoices.find(i => i.id === invoiceId);
+    if (!inv) {
+      addNotification('error', 'Error', 'Invoice not found');
+      return;
+    }
+
     setVerifyingId(invoiceId);
 
     try {
-      // Parse on-chain invoice ID - strip INV- prefix, parse as integer
-      // On-chain IDs are 0-indexed (first invoice = 0)
-      const numericStr = invoiceId.replace('INV-', '');
-      const numericId = parseInt(numericStr, 10);
+      // Use the actual on-chain chain ID stored when minting
+      // Fall back to parsing the local ID if chainId wasn't stored
+      const onChainId = typeof inv.chainId === 'number' ? inv.chainId : parseInt(invoiceId.replace('INV-', ''), 10);
       
-      if (isNaN(numericId)) {
-        throw new Error(`Invalid invoice ID format: ${invoiceId}`);
-      }
-      
-      // Try on-chain ID as-is first (0-based), the contract stores from ID 1 typically
-      const txHash = await verifyInvoiceOnChain(publicKey, BigInt(numericId));
+      const txHash = await verifyInvoiceOnChain(publicKey, BigInt(onChainId));
 
       verifyInvoice(invoiceId, txHash);
       addNotification(
@@ -47,7 +47,7 @@ export default function RequestsPage() {
       );
     } catch (error) {
       console.error(error);
-      const msg = error instanceof Error ? error.message : 'Transaction failed to submit. undefined';
+      const msg = error instanceof Error ? error.message : 'Transaction failed';
       addNotification('error', 'Verification Failed', msg);
     } finally {
       setVerifyingId(null);
