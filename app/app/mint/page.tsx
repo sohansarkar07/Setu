@@ -86,10 +86,10 @@ export default function MintInvoicePage() {
     } catch (error) {
       console.error("Minting failed:", error);
       const errMsg = error instanceof Error ? error.message : String(error) || 'An unknown error occurred during minting';
-      addNotification('error', 'Minting Failed', errMsg);
+      addNotification('error', 'Minting Failed', 'VERIFIED_V1: ' + errMsg);
       setMintResult({
         success: false,
-        error: errMsg || 'Transaction failed'
+        error: 'VERIFIED_V1: ' + errMsg || 'Transaction failed'
       });
     } finally {
       setIsMinting(false);
