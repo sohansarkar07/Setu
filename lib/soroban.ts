@@ -103,13 +103,24 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       throw new Error(`Freighter Error: ${errMsg}`);
     }
     
-    signedTx = typeof signedResponse === 'string' 
-      ? signedResponse 
-      : (signedResponse as any).signedTx || (signedResponse as any).transactionXdr || (signedResponse as any).signedTransaction;
-  }
+    let signedTx = '';
+    
+    if (typeof signedResponse === 'string') {
+      signedTx = signedResponse;
+    } else {
+      signedTx = (signedResponse as any).signedTx 
+        || (signedResponse as any).transactionXdr 
+        || (signedResponse as any).signedTransaction
+        || (signedResponse as any).tx
+        || (signedResponse as any).xdr;
+    }
+    
+    if (!signedTx) {
+      throw new Error(`Freighter success response format unknown: ${JSON.stringify(signedResponse)}`);
+    }
 
-  // Submit to network
-  const tx = xdr.TransactionEnvelope.fromXDR(signedTx, 'base64');
+    // Submit to network
+    const tx = xdr.TransactionEnvelope.fromXDR(signedTx, 'base64');
   const response = await server.sendTransaction(tx);
   
   if (response.status === 'ERROR') {
