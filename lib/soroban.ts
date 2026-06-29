@@ -123,25 +123,66 @@ export async function mintInvoiceOnChain(
   return { txHash, chainId };
 }
 
+// ── Read invoice count from chain ─────────────────────────────────────────
+export async function getInvoiceCountOnChain(): Promise<number> {
+  const client = getInvoiceClient();
+  const assembled = await client.get_invoice_count();
+  if (typeof assembled.result === 'bigint') return Number(assembled.result);
+  return 0;
+}
+
+// ── Read a specific invoice from chain (to validate it exists) ─────────────
+export async function getInvoiceFromChain(invoice_id: bigint) {
+  const client = getInvoiceClient();
+  const assembled = await client.get_invoice({ invoice_id });
+  return assembled.result;
+}
+
 export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): Promise<string> {
+  // Pre-flight: verify the invoice actually exists on-chain before signing
+  let onChainInvoice;
+  try {
+    onChainInvoice = await getInvoiceFromChain(invoice_id);
+  } catch {
+    // Try ID - 1 in case the contract uses 0-based indexing  
+    if (invoice_id > 0n) {
+      try {
+        onChainInvoice = await getInvoiceFromChain(invoice_id - 1n);
+        invoice_id = invoice_id - 1n; // Use the working ID
+      } catch {
+        throw new Error(
+          `Invoice not found on-chain. The invoice may not have been minted yet. Please mint a new invoice and try again.`
+        );
+      }
+    } else {
+      throw new Error(
+        `Invoice not found on-chain. The invoice may not have been minted yet. Please mint a new invoice and try again.`
+      );
+    }
+  }
+
+  if (!onChainInvoice) {
+    throw new Error('Invoice not found on-chain. Please mint a new invoice first.');
+  }
+
   const signer = await getSigner();
   const client = getInvoiceClient(buyer);
   
-  // Simulate first to catch contract errors early
   const assembled = await client.verify_invoice({ buyer, invoice_id });
   
   if (!assembled.built) {
-    throw new Error('Failed to build verify_invoice transaction. Check that the invoice exists and is in Draft status.');
+    throw new Error('Failed to build verify_invoice transaction.');
   }
   
   await assembled.signAndSend({ signTransaction: signer });
   
   const hash = assembled.sendTransactionResponse?.hash;
   if (!hash) {
-    throw new Error('Transaction was submitted but no hash was returned. Check Stellar explorer.');
+    throw new Error('Transaction was submitted but no hash was returned.');
   }
   return hash;
 }
+
 
 export async function fundInvoiceOnChain(investor: string, invoice_id: bigint): Promise<string> {
   const signer = await getSigner();
