@@ -93,10 +93,21 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
     }
     
     // Default to Freighter
-    const signedResponse = await signTransaction(xdrString, {
-      network: 'TESTNET',
-      networkPassphrase: NETWORK_PASSPHRASE,
-    });
+    let signedResponse;
+    try {
+      signedResponse = await signTransaction(xdrString, {
+        network: 'TESTNET',
+        networkPassphrase: NETWORK_PASSPHRASE,
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new Error(`Freighter Error: ${e.message}`);
+      } else if (typeof e === 'object' && e !== null) {
+        throw new Error(`Freighter Error: ${JSON.stringify(e)}`);
+      } else {
+        throw new Error(`Freighter Error: ${String(e)}`);
+      }
+    }
     
     if (typeof signedResponse === 'object' && signedResponse !== null) {
       const responseObj = signedResponse as Record<string, unknown>;

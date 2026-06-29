@@ -84,7 +84,19 @@ export default function MintInvoicePage() {
       setBuyerAddress('');
     } catch (error) {
       console.error("Minting failed:", error);
-      const errMsg = error instanceof Error ? error.message : String(error) || 'An unknown error occurred during minting';
+      let errMsg = 'An unknown error occurred';
+      if (error instanceof Error) {
+        errMsg = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        try {
+          errMsg = JSON.stringify(error);
+        } catch (e) {
+          errMsg = String(error);
+        }
+      } else {
+        errMsg = String(error);
+      }
+      
       addNotification('error', 'Minting Failed', 'VERIFIED_V1: ' + errMsg);
       setMintResult({
         success: false,
