@@ -115,7 +115,8 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       signedTx = signedResponse;
     } else if (typeof signedResponse === 'object' && signedResponse !== null) {
       const responseObj = signedResponse as Record<string, unknown>;
-      if (typeof responseObj.signedTx === 'string') signedTx = responseObj.signedTx;
+      if (typeof responseObj.signedTxXdr === 'string') signedTx = responseObj.signedTxXdr;
+      else if (typeof responseObj.signedTx === 'string') signedTx = responseObj.signedTx;
       else if (typeof responseObj.transactionXdr === 'string') signedTx = responseObj.transactionXdr;
       else if (typeof responseObj.signedTransaction === 'string') signedTx = responseObj.signedTransaction;
       else if (typeof responseObj.tx === 'string') signedTx = responseObj.tx;
