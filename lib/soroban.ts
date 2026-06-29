@@ -77,13 +77,30 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
       throw new Error(`xBull Transaction Rejected: ${msg}`);
     }
   } else {
+    // Extract public key to pass as accountToSign if we can parse it from the transaction
+    let accountToSign = undefined;
+    try {
+      const tx = xdr.TransactionEnvelope.fromXDR(xdrString, 'base64');
+      const source = tx.v1()?.tx().sourceAccount().ed25519();
+      if (source) {
+        import('@stellar/stellar-sdk').then(({ StrKey }) => {
+          // We could parse it, but it's easier to just rely on the active wallet for now,
+          // or we can just pass the globally available active wallet from localStorage if possible.
+        });
+      }
+    } catch(e) {}
+    
     // Default to Freighter
     const signedResponse = await signTransaction(xdrString, {
       network: 'TESTNET',
+      networkPassphrase: NETWORK_PASSPHRASE,
     });
     
     if (typeof signedResponse === 'object' && 'error' in signedResponse && signedResponse.error) {
-      throw new Error(`Transaction Rejected by User: ${signedResponse.error}`);
+      const errMsg = typeof signedResponse.error === 'string' 
+        ? signedResponse.error 
+        : JSON.stringify(signedResponse.error);
+      throw new Error(`Freighter Error: ${errMsg}`);
     }
     
     signedTx = typeof signedResponse === 'string' 
