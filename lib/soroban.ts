@@ -173,6 +173,12 @@ export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): P
   // Check the status (status is usually an enum or number, assuming 0 or 'Draft' is the initial status)
   // We'll stringify it to check safely
   const statusStr = JSON.stringify(onChainInvoice.status);
+  
+  if (statusStr.toLowerCase().includes('verified') || statusStr === '1') {
+    // Already verified on chain, just return success so local state can catch up
+    return 'already_verified';
+  }
+  
   if (!statusStr.toLowerCase().includes('draft') && statusStr !== '0') {
     throw new Error(`Invoice is not in Draft status. Current status: ${statusStr}`);
   }
