@@ -1,7 +1,7 @@
 import { Client as InvoiceClient, networks as invoiceNetworks } from 'invoice-client';
 import { Client as TokenClient, networks as tokenNetworks } from 'token-client';
 import { signTransaction } from '@stellar/freighter-api';
-import { rpc, xdr } from '@stellar/stellar-sdk';
+import { rpc, TransactionBuilder } from '@stellar/stellar-sdk';
 
 interface AlbedoIntent {
   tx: (params: { xdr: string; network: string }) => Promise<{ signed_envelope_xdr: string }>;
@@ -113,8 +113,8 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
   }
 
   // ── 2. Submit to network ───────────────────────────────────────────────────
-  const txEnvelope = xdr.TransactionEnvelope.fromXDR(signedTx, 'base64');
-  const response = await server.sendTransaction(txEnvelope);
+  const txObject = TransactionBuilder.fromXDR(signedTx, NETWORK_PASSPHRASE);
+  const response = await server.sendTransaction(txObject);
 
   if (response.status === 'ERROR') {
     throw new Error(
