@@ -17,7 +17,7 @@ if (typeof window !== 'undefined') {
 const RPC_URL = 'https://soroban-testnet.stellar.org';
 const NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
 
-// ── Wallet-aware signer function ───────────────────────────────────────────
+// ΓöÇΓöÇ Wallet-aware signer function ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 async function getSigner(): Promise<(xdr: string) => Promise<{ signedTxXdr: string }>> {
   const activeWallet =
     typeof window !== 'undefined'
@@ -75,12 +75,6 @@ async function getSigner(): Promise<(xdr: string) => Promise<{ signedTxXdr: stri
         return { signedTxXdr: xdrValue };
       }
     }
-    
-    // If we reach here and it's an empty object, the user likely closed the Freighter popup
-    if (typeof result === 'object' && Object.keys(result as object).length === 0) {
-      throw new Error('Transaction was cancelled or Freighter returned an empty response.');
-    }
-    
     throw new Error(`Unknown Freighter response: ${JSON.stringify(result)}`);
   };
 }
@@ -103,25 +97,15 @@ export function getTokenClient(publicKey?: string) {
 
 export const server = new rpc.Server(RPC_URL);
 
-import { Transaction } from '@stellar/stellar-sdk';
+// ── Business Logic Helpers ─────────────────────────────────────────────────
 
-// ── Reliable Transaction Submitter ─────────────────────────────────────────
-// Bypasses the SDK's signAndSend to manually sign and submit, guaranteeing 
-// we always capture the real transaction hash from the RPC response.
-export async function signAndSubmit(xdrString: string): Promise<string> {
-  const signer = await getSigner();
-  const { signedTxXdr } = await signer(xdrString);
-  
-  const tx = new Transaction(signedTxXdr, NETWORK_PASSPHRASE);
-  const response = await server.sendTransaction(tx);
-  
-  if (response.status === 'ERROR') {
-    throw new Error(`Transaction failed to submit. ${response.errorResultXdr}`);
-  }
-  
-  return response.hash;
+function extractTxHash(sendResult: any): string | undefined {
+  if (!sendResult) return undefined;
+  if (typeof sendResult.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(sendResult.hash)) return sendResult.hash;
+  if (typeof sendResult.id === 'string' && /^[0-9a-fA-F]{64}$/.test(sendResult.id)) return sendResult.id;
+  if (sendResult.sendTransactionResponse && typeof sendResult.sendTransactionResponse.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(sendResult.sendTransactionResponse.hash)) return sendResult.sendTransactionResponse.hash;
+  return undefined;
 }
-
 
 export async function mintInvoiceOnChain(
   supplier: string,
@@ -134,8 +118,11 @@ export async function mintInvoiceOnChain(
   const client = getInvoiceClient(supplier);
   const assembled = await client.mint_invoice({ supplier, buyer, amount, description, due_date });
 
-  if (!assembled.built) throw new Error('Failed to build mint_invoice transaction.');
-  const txHash = await signAndSubmit(assembled.built.toXDR());
+  const sendResult = await assembled.signAndSend({
+    signTransaction: signer,
+  });
+
+  const txHash = extractTxHash(sendResult) || extractTxHash(assembled) || 'success';
   // The result of mint_invoice is the new invoice's on-chain u64 ID
   const chainId = typeof assembled.result === 'bigint'
     ? Number(assembled.result)
@@ -144,7 +131,7 @@ export async function mintInvoiceOnChain(
   return { txHash, chainId };
 }
 
-// ── Read invoice count from chain ─────────────────────────────────────────
+// ΓöÇΓöÇ Read invoice count from chain ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 export async function getInvoiceCountOnChain(): Promise<number> {
   const client = getInvoiceClient();
   const assembled = await client.get_invoice_count();
@@ -152,7 +139,7 @@ export async function getInvoiceCountOnChain(): Promise<number> {
   return 0;
 }
 
-// ── Read a specific invoice from chain (to validate it exists) ─────────────
+// ΓöÇΓöÇ Read a specific invoice from chain (to validate it exists) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 export async function getInvoiceFromChain(invoice_id: bigint) {
   const client = getInvoiceClient();
   const assembled = await client.get_invoice({ invoice_id });
@@ -213,8 +200,10 @@ export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): P
     throw new Error('Failed to build verify_invoice transaction.');
   }
   
-  const hash = await signAndSubmit(assembled.built.toXDR());
-  return hash;
+  const sendResult = await assembled.signAndSend({ signTransaction: signer });
+  
+  const hash = extractTxHash(sendResult) || extractTxHash(assembled);
+  return hash || 'success';
 }
 
 
@@ -265,8 +254,9 @@ export async function fundInvoiceOnChain(investor: string, invoice_id: bigint): 
     throw new Error('Failed to build fund_invoice transaction.');
   }
   
-  const hash = await signAndSubmit(assembled.built.toXDR());
-  return hash;
+  const sendResult = await assembled.signAndSend({ signTransaction: signer });
+  const hash = extractTxHash(sendResult) || extractTxHash(assembled);
+  return hash || 'success';
 }
 
 export async function getAdminOnChain(): Promise<string> {
@@ -289,8 +279,9 @@ export async function approveKYCOnChain(admin: string, investor: string): Promis
     throw new Error('Failed to build approve_kyc transaction.');
   }
   
-  const hash = await signAndSubmit(assembled.built.toXDR());
-  return hash;
+  const sendResult = await assembled.signAndSend({ signTransaction: signer });
+  const hash = extractTxHash(sendResult) || extractTxHash(assembled);
+  return hash || 'success';
 }
 
 export async function revokeKYCOnChain(admin: string, investor: string): Promise<string> {
@@ -307,8 +298,9 @@ export async function revokeKYCOnChain(admin: string, investor: string): Promise
     throw new Error('Failed to build revoke_kyc transaction.');
   }
   
-  const hash = await signAndSubmit(assembled.built.toXDR());
-  return hash;
+  const sendResult = await assembled.signAndSend({ signTransaction: signer });
+  const hash = extractTxHash(sendResult) || extractTxHash(assembled);
+  return hash || 'success';
 }
 
 export async function checkKYCOnChain(investor: string): Promise<boolean> {
