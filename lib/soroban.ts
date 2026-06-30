@@ -17,8 +17,15 @@ if (typeof window !== 'undefined') {
 const RPC_URL = 'https://soroban-testnet.stellar.org';
 const NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
 
-// ΓöÇΓöÇ Wallet-aware signer function ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-async function getSigner(): Promise<(xdr: string) => Promise<{ signedTxXdr: string }>> {
+// ── Wallet-aware signer function ──────────────────────────────────────────────
+// The Stellar SDK calls our signer as: signer(xdr, { networkPassphrase, address? })
+// We must forward these opts to Freighter v6 which reads networkPassphrase from them.
+type SignerOpts = {
+  networkPassphrase?: string;
+  address?: string;
+};
+
+async function getSigner(): Promise<(xdr: string, opts?: SignerOpts) => Promise<{ signedTxXdr: string }>> {
   const activeWallet =
     typeof window !== 'undefined'
       ? localStorage.getItem('setu_wallet_connected') ?? 'freighter'
@@ -41,13 +48,14 @@ async function getSigner(): Promise<(xdr: string) => Promise<{ signedTxXdr: stri
     };
   }
 
-  // Default: Freighter
-  return async (xdr: string) => {
+  // Default: Freighter v6
+  // We use Freighter's signTransaction directly with the opts the SDK provides.
+  return async (xdr: string, opts?: SignerOpts) => {
     let result: unknown;
     try {
       result = await signTransaction(xdr, {
-        network: 'TESTNET',
-        networkPassphrase: NETWORK_PASSPHRASE,
+        networkPassphrase: opts?.networkPassphrase ?? NETWORK_PASSPHRASE,
+        ...(opts?.address ? { address: opts.address } : {}),
       });
     } catch (e) {
       const msg =
@@ -59,7 +67,6 @@ async function getSigner(): Promise<(xdr: string) => Promise<{ signedTxXdr: stri
       throw new Error(`Freighter signing failed: ${msg}`);
     }
 
-    // Freighter v6 returns { signedTxXdr: '...' }
     if (typeof result === 'string') {
       return { signedTxXdr: result };
     }
@@ -67,15 +74,19 @@ async function getSigner(): Promise<(xdr: string) => Promise<{ signedTxXdr: stri
       const r = result as Record<string, unknown>;
       if (r.error) {
         const errMsg = typeof r.error === 'string' ? r.error : JSON.stringify(r.error);
+        // Empty error string means user cancelled
+        if (!errMsg || errMsg === 'null') {
+          throw new Error('Transaction was cancelled. Please approve in Freighter and try again.');
+        }
         throw new Error(`Freighter signing rejected: ${errMsg}`);
       }
       const xdrValue =
         r.signedTxXdr ?? r.signedTx ?? r.transactionXdr ?? r.signedTransaction ?? r.tx ?? r.xdr;
-      if (typeof xdrValue === 'string') {
+      if (typeof xdrValue === 'string' && xdrValue) {
         return { signedTxXdr: xdrValue };
       }
     }
-    throw new Error(`Unknown Freighter response: ${JSON.stringify(result)}`);
+    throw new Error('Transaction was cancelled or Freighter returned an empty response.');
   };
 }
 
