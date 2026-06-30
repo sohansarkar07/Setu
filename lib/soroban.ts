@@ -153,10 +153,10 @@ export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): P
     onChainInvoice = await getInvoiceFromChain(invoice_id);
   } catch {
     // Try ID - 1 in case the contract uses 0-based indexing  
-    if (invoice_id > 0n) {
+    if (invoice_id > BigInt(0)) {
       try {
-        onChainInvoice = await getInvoiceFromChain(invoice_id - 1n);
-        invoice_id = invoice_id - 1n; // Use the working ID
+        onChainInvoice = await getInvoiceFromChain(invoice_id - BigInt(1));
+        invoice_id = invoice_id - BigInt(1); // Use the working ID
       } catch {
         throw new Error(
           `Invoice not found on-chain. The invoice may not have been minted yet. Please mint a new invoice and try again.`
@@ -214,10 +214,10 @@ export async function fundInvoiceOnChain(investor: string, invoice_id: bigint): 
     onChainInvoice = await getInvoiceFromChain(invoice_id);
   } catch {
     // Try ID - 1 in case the contract uses 0-based indexing  
-    if (invoice_id > 0n) {
+    if (invoice_id > BigInt(0)) {
       try {
-        onChainInvoice = await getInvoiceFromChain(invoice_id - 1n);
-        invoice_id = invoice_id - 1n; // Use the working ID
+        onChainInvoice = await getInvoiceFromChain(invoice_id - BigInt(1));
+        invoice_id = invoice_id - BigInt(1); // Use the working ID
       } catch {
         throw new Error(`Invoice not found on-chain.`);
       }
