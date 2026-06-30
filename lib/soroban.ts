@@ -103,17 +103,23 @@ export function getTokenClient(publicKey?: string) {
 
 export const server = new rpc.Server(RPC_URL);
 
-// ── Extract real tx hash from the assembled transaction after signAndSend ──
-// The SDK doesn't always populate sendTransactionResponse.hash when using
-// a custom signer, so we look in multiple places.
-function extractTxHash(assembled: { sendTransactionResponse?: { hash?: string; id?: string } }): string | undefined {
-  const resp = assembled.sendTransactionResponse as Record<string, unknown> | undefined;
-  if (!resp) return undefined;
-  // Try the standard field first
-  if (typeof resp.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(resp.hash)) return resp.hash;
-  // Some SDK versions call it 'id'
-  if (typeof resp.id === 'string' && /^[0-9a-fA-F]{64}$/.test(resp.id)) return resp.id;
-  return undefined;
+import { xdr } from '@stellar/stellar-sdk';
+
+// ── Reliable Transaction Submitter ─────────────────────────────────────────
+// Bypasses the SDK's signAndSend to manually sign and submit, guaranteeing 
+// we always capture the real transaction hash from the RPC response.
+export async function signAndSubmit(xdrString: string): Promise<string> {
+  const signer = await getSigner();
+  const { signedTxXdr } = await signer(xdrString);
+  
+  const tx = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64');
+  const response = await server.sendTransaction(tx);
+  
+  if (response.status === 'ERROR') {
+    throw new Error(`Transaction failed to submit. ${response.errorResultXdr}`);
+  }
+  
+  return response.hash;
 }
 
 
@@ -128,11 +134,8 @@ export async function mintInvoiceOnChain(
   const client = getInvoiceClient(supplier);
   const assembled = await client.mint_invoice({ supplier, buyer, amount, description, due_date });
 
-  await assembled.signAndSend({
-    signTransaction: signer,
-  });
-
-  const txHash = extractTxHash(assembled) ?? 'success';
+  if (!assembled.built) throw new Error('Failed to build mint_invoice transaction.');
+  const txHash = await signAndSubmit(assembled.built.toXDR());
   // The result of mint_invoice is the new invoice's on-chain u64 ID
   const chainId = typeof assembled.result === 'bigint'
     ? Number(assembled.result)
@@ -210,10 +213,8 @@ export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): P
     throw new Error('Failed to build verify_invoice transaction.');
   }
   
-  await assembled.signAndSend({ signTransaction: signer });
-  
-  const hash = extractTxHash(assembled);
-  return hash || 'success';
+  const hash = await signAndSubmit(assembled.built.toXDR());
+  return hash;
 }
 
 
@@ -264,9 +265,8 @@ export async function fundInvoiceOnChain(investor: string, invoice_id: bigint): 
     throw new Error('Failed to build fund_invoice transaction.');
   }
   
-  await assembled.signAndSend({ signTransaction: signer });
-  const hash = extractTxHash(assembled);
-  return hash || 'success';
+  const hash = await signAndSubmit(assembled.built.toXDR());
+  return hash;
 }
 
 export async function getAdminOnChain(): Promise<string> {
@@ -289,9 +289,8 @@ export async function approveKYCOnChain(admin: string, investor: string): Promis
     throw new Error('Failed to build approve_kyc transaction.');
   }
   
-  await assembled.signAndSend({ signTransaction: signer });
-  const hash = extractTxHash(assembled);
-  return hash || 'success';
+  const hash = await signAndSubmit(assembled.built.toXDR());
+  return hash;
 }
 
 export async function revokeKYCOnChain(admin: string, investor: string): Promise<string> {
@@ -308,9 +307,8 @@ export async function revokeKYCOnChain(admin: string, investor: string): Promise
     throw new Error('Failed to build revoke_kyc transaction.');
   }
   
-  await assembled.signAndSend({ signTransaction: signer });
-  const hash = extractTxHash(assembled);
-  return hash || 'success';
+  const hash = await signAndSubmit(assembled.built.toXDR());
+  return hash;
 }
 
 export async function checkKYCOnChain(investor: string): Promise<boolean> {
