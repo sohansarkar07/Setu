@@ -103,7 +103,7 @@ export function getTokenClient(publicKey?: string) {
 
 export const server = new rpc.Server(RPC_URL);
 
-import { xdr } from '@stellar/stellar-sdk';
+import { Transaction } from '@stellar/stellar-sdk';
 
 // ── Reliable Transaction Submitter ─────────────────────────────────────────
 // Bypasses the SDK's signAndSend to manually sign and submit, guaranteeing 
@@ -112,7 +112,7 @@ export async function signAndSubmit(xdrString: string): Promise<string> {
   const signer = await getSigner();
   const { signedTxXdr } = await signer(xdrString);
   
-  const tx = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64');
+  const tx = new Transaction(signedTxXdr, NETWORK_PASSPHRASE);
   const response = await server.sendTransaction(tx);
   
   if (response.status === 'ERROR') {
