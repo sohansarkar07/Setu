@@ -200,27 +200,99 @@ export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): P
 
 
 export async function fundInvoiceOnChain(investor: string, invoice_id: bigint): Promise<string> {
+  // Pre-flight: verify the invoice actually exists on-chain before signing
+  let onChainInvoice;
+  try {
+    onChainInvoice = await getInvoiceFromChain(invoice_id);
+  } catch {
+    // Try ID - 1 in case the contract uses 0-based indexing  
+    if (invoice_id > 0n) {
+      try {
+        onChainInvoice = await getInvoiceFromChain(invoice_id - 1n);
+        invoice_id = invoice_id - 1n; // Use the working ID
+      } catch {
+        throw new Error(`Invoice not found on-chain.`);
+      }
+    } else {
+      throw new Error(`Invoice not found on-chain.`);
+    }
+  }
+
+  if (!onChainInvoice) {
+    throw new Error('Invoice not found on-chain.');
+  }
+
+  const statusStr = JSON.stringify(onChainInvoice.status);
+  
+  if (statusStr.toLowerCase().includes('funded') || statusStr === '2') {
+    return 'already_funded';
+  }
+  
+  if (!statusStr.toLowerCase().includes('verified') && statusStr !== '1') {
+    throw new Error(`Invoice is not in Verified status. Current status: ${statusStr}`);
+  }
+
+  // Pre-flight check KYC
+  const isKyc = await checkKYCOnChain(investor);
+  if (!isKyc) {
+    throw new Error('Your KYC is not approved. You must be KYC approved to fund invoices.');
+  }
+
   const signer = await getSigner();
   const client = getInvoiceClient(investor);
   const assembled = await client.fund_invoice({ investor, invoice_id });
+  
+  if (!assembled.built) {
+    throw new Error('Failed to build fund_invoice transaction.');
+  }
+  
   await assembled.signAndSend({ signTransaction: signer });
-  return assembled.sendTransactionResponse?.hash ?? 'success';
+  const hash = assembled.sendTransactionResponse?.hash;
+  return hash || 'success';
+}
+
+export async function getAdminOnChain(): Promise<string> {
+  const client = getInvoiceClient();
+  const assembled = await client.get_admin();
+  return assembled.result as string;
 }
 
 export async function approveKYCOnChain(admin: string, investor: string): Promise<string> {
+  const onChainAdmin = await getAdminOnChain();
+  if (onChainAdmin !== admin) {
+    throw new Error(`You are not the contract admin. Admin is ${onChainAdmin.substring(0, 5)}...${onChainAdmin.slice(-4)}`);
+  }
+
   const signer = await getSigner();
   const client = getInvoiceClient(admin);
   const assembled = await client.approve_kyc({ admin, investor });
+  
+  if (!assembled.built) {
+    throw new Error('Failed to build approve_kyc transaction.');
+  }
+  
   await assembled.signAndSend({ signTransaction: signer });
-  return assembled.sendTransactionResponse?.hash ?? 'success';
+  const hash = assembled.sendTransactionResponse?.hash;
+  return hash || 'success';
 }
 
 export async function revokeKYCOnChain(admin: string, investor: string): Promise<string> {
+  const onChainAdmin = await getAdminOnChain();
+  if (onChainAdmin !== admin) {
+    throw new Error(`You are not the contract admin. Admin is ${onChainAdmin.substring(0, 5)}...${onChainAdmin.slice(-4)}`);
+  }
+
   const signer = await getSigner();
   const client = getInvoiceClient(admin);
   const assembled = await client.revoke_kyc({ admin, investor });
+  
+  if (!assembled.built) {
+    throw new Error('Failed to build revoke_kyc transaction.');
+  }
+  
   await assembled.signAndSend({ signTransaction: signer });
-  return assembled.sendTransactionResponse?.hash ?? 'success';
+  const hash = assembled.sendTransactionResponse?.hash;
+  return hash || 'success';
 }
 
 export async function checkKYCOnChain(investor: string): Promise<boolean> {

@@ -41,8 +41,20 @@ export default function MarketplacePage() {
       if (!invoice) throw new Error('Invoice not found');
 
       // Real on-chain funding
-      const numericId = parseInt(invoiceId.replace('INV-', ''));
-      const txHash = await fundInvoiceOnChain(publicKey, BigInt(numericId));
+      // Use the actual on-chain chain ID stored when minting
+      // Fall back to parsing the local ID if chainId wasn't stored
+      const onChainId = typeof invoice.chainId === 'number' 
+        ? invoice.chainId 
+        : parseInt(invoiceId.replace('INV-', ''), 10);
+        
+      const txHash = await fundInvoiceOnChain(publicKey, BigInt(onChainId));
+
+      // Check if it returned 'already_funded' gracefully
+      if (txHash === 'already_funded') {
+        fundInvoice(invoiceId, publicKey, 'already_funded');
+        addNotification('success', 'Already Funded', `Invoice ${invoiceId} is already funded on-chain.`);
+        return;
+      }
 
       fundInvoice(invoiceId, publicKey, txHash);
       addNotification(
