@@ -97,7 +97,19 @@ export function getTokenClient(publicKey?: string) {
 
 export const server = new rpc.Server(RPC_URL);
 
-// ── Business Logic Helpers ─────────────────────────────────────────────────
+// ── Extract real tx hash from the assembled transaction after signAndSend ──
+// The SDK doesn't always populate sendTransactionResponse.hash when using
+// a custom signer, so we look in multiple places.
+function extractTxHash(assembled: { sendTransactionResponse?: { hash?: string; id?: string } }): string | undefined {
+  const resp = assembled.sendTransactionResponse as Record<string, unknown> | undefined;
+  if (!resp) return undefined;
+  // Try the standard field first
+  if (typeof resp.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(resp.hash)) return resp.hash;
+  // Some SDK versions call it 'id'
+  if (typeof resp.id === 'string' && /^[0-9a-fA-F]{64}$/.test(resp.id)) return resp.id;
+  return undefined;
+}
+
 
 export async function mintInvoiceOnChain(
   supplier: string,
@@ -114,7 +126,7 @@ export async function mintInvoiceOnChain(
     signTransaction: signer,
   });
 
-  const txHash = assembled.sendTransactionResponse?.hash ?? 'success';
+  const txHash = extractTxHash(assembled) ?? 'success';
   // The result of mint_invoice is the new invoice's on-chain u64 ID
   const chainId = typeof assembled.result === 'bigint'
     ? Number(assembled.result)
@@ -194,7 +206,7 @@ export async function verifyInvoiceOnChain(buyer: string, invoice_id: bigint): P
   
   await assembled.signAndSend({ signTransaction: signer });
   
-  const hash = assembled.sendTransactionResponse?.hash;
+  const hash = extractTxHash(assembled);
   return hash || 'success';
 }
 
@@ -247,7 +259,7 @@ export async function fundInvoiceOnChain(investor: string, invoice_id: bigint): 
   }
   
   await assembled.signAndSend({ signTransaction: signer });
-  const hash = assembled.sendTransactionResponse?.hash;
+  const hash = extractTxHash(assembled);
   return hash || 'success';
 }
 
@@ -272,7 +284,7 @@ export async function approveKYCOnChain(admin: string, investor: string): Promis
   }
   
   await assembled.signAndSend({ signTransaction: signer });
-  const hash = assembled.sendTransactionResponse?.hash;
+  const hash = extractTxHash(assembled);
   return hash || 'success';
 }
 
@@ -291,7 +303,7 @@ export async function revokeKYCOnChain(admin: string, investor: string): Promise
   }
   
   await assembled.signAndSend({ signTransaction: signer });
-  const hash = assembled.sendTransactionResponse?.hash;
+  const hash = extractTxHash(assembled);
   return hash || 'success';
 }
 
