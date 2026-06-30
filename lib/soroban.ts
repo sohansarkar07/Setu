@@ -75,6 +75,12 @@ async function getSigner(): Promise<(xdr: string) => Promise<{ signedTxXdr: stri
         return { signedTxXdr: xdrValue };
       }
     }
+    
+    // If we reach here and it's an empty object, the user likely closed the Freighter popup
+    if (typeof result === 'object' && Object.keys(result as object).length === 0) {
+      throw new Error('Transaction was cancelled or Freighter returned an empty response.');
+    }
+    
     throw new Error(`Unknown Freighter response: ${JSON.stringify(result)}`);
   };
 }
