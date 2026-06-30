@@ -6,8 +6,8 @@ import { useInvoiceStore } from '@/lib/invoice-store';
 import { shortenAddress } from '@/lib/stellar';
 import { verifyInvoiceOnChain } from '@/lib/soroban';
 import {
-  ClipboardCheck, AlertCircle, CheckCircle, Wallet,
-  ShieldCheck, Loader2, ArrowRight, FileText, User, 
+  AlertCircle, Wallet,
+  ShieldCheck, Loader2, User, 
   Calendar, DollarSign
 } from 'lucide-react';
 

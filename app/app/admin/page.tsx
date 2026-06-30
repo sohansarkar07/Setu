@@ -6,8 +6,8 @@ import { useInvoiceStore } from '@/lib/invoice-store';
 import { shortenAddress } from '@/lib/stellar';
 import { approveKYCOnChain, revokeKYCOnChain } from '@/lib/soroban';
 import {
-  Shield, UserCheck, UserX, Loader2, Plus, Users, Wallet,
-  AlertCircle, CheckCircle, ExternalLink, Lock
+  Shield, UserCheck, UserX, Loader2, Users, Wallet,
+  AlertCircle, CheckCircle, Lock
 } from 'lucide-react';
 
 export default function AdminPage() {

@@ -91,7 +91,7 @@ export function InvoiceStoreProvider({ children }: { children: ReactNode }) {
     }));
     addNotification('success', 'Invoice Funded', `Invoice ${id} funded successfully. Supplier received funds.`);
     return true;
-  }, [kycRecords, addNotification]);
+  }, [addNotification]);
 
   const getInvoicesByStatus = useCallback((status: InvoiceStatus) => {
     return invoices.filter(inv => inv.status === status);

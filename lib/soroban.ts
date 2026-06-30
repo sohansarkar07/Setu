@@ -99,11 +99,27 @@ export const server = new rpc.Server(RPC_URL);
 
 // ── Business Logic Helpers ─────────────────────────────────────────────────
 
-function extractTxHash(sendResult: any): string | undefined {
-  if (!sendResult) return undefined;
-  if (typeof sendResult.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(sendResult.hash)) return sendResult.hash;
-  if (typeof sendResult.id === 'string' && /^[0-9a-fA-F]{64}$/.test(sendResult.id)) return sendResult.id;
-  if (sendResult.sendTransactionResponse && typeof sendResult.sendTransactionResponse.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(sendResult.sendTransactionResponse.hash)) return sendResult.sendTransactionResponse.hash;
+function extractTxHash(sendResult: unknown): string | undefined {
+  if (!sendResult || typeof sendResult !== 'object') return undefined;
+  
+  // Use a type assertion that avoids explicit any
+  const result = sendResult as Record<string, unknown>;
+  
+  if (typeof result.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(result.hash)) {
+    return result.hash;
+  }
+  
+  if (typeof result.id === 'string' && /^[0-9a-fA-F]{64}$/.test(result.id)) {
+    return result.id;
+  }
+  
+  if (result.sendTransactionResponse && typeof result.sendTransactionResponse === 'object') {
+    const nested = result.sendTransactionResponse as Record<string, unknown>;
+    if (typeof nested.hash === 'string' && /^[0-9a-fA-F]{64}$/.test(nested.hash)) {
+      return nested.hash;
+    }
+  }
+  
   return undefined;
 }
 

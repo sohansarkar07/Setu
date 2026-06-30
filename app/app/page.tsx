@@ -6,7 +6,7 @@ import { formatXLM, shortenAddress } from '@/lib/stellar';
 import Link from 'next/link';
 import {
   FileText, ClipboardCheck, TrendingUp, CheckCircle,
-  ArrowRight, Wallet, Zap, Shield, Users, Clock,
+  ArrowRight, Wallet, Zap, Shield,
   ArrowUpRight, AlertCircle, Coins, Activity
 } from 'lucide-react';
 

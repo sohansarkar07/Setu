@@ -10,7 +10,7 @@ import {
   Briefcase, Shield, Wallet, LogOut, Menu, X,
   ChevronRight, Copy, ExternalLink, CheckCircle, AlertCircle, Send
 } from 'lucide-react';
-import { shortenAddress, formatXLM } from '@/lib/stellar';
+import { formatXLM } from '@/lib/stellar';
 
 const navItems = [
   { href: '/app', label: 'Overview', icon: LayoutDashboard },

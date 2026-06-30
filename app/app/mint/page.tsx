@@ -6,7 +6,7 @@ import { useInvoiceStore } from '@/lib/invoice-store';
 import { mintInvoiceOnChain } from '@/lib/soroban';
 import {
   FileText, Wallet, AlertCircle, CheckCircle, Loader2,
-  Calendar, DollarSign, User, FileCheck, ArrowRight,
+  Calendar, DollarSign, User, FileCheck,
   ExternalLink
 } from 'lucide-react';
 
