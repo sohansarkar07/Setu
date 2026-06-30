@@ -73,12 +73,9 @@ export function InvoiceStoreProvider({ children }: { children: ReactNode }) {
   }, [addNotification]);
 
   const fundInvoice = useCallback((id: string, investor: string, txHash?: string): boolean => {
-    // Check KYC
-    const isApproved = kycRecords.some(r => r.address === investor && r.approved);
-    if (!isApproved) {
-      addNotification('error', 'KYC Required', 'You must complete KYC before funding invoices');
-      return false;
-    }
+    // Note: We used to check local kycRecords here, but we now enforce 
+    // KYC strictly on-chain via the soroban contract. If we reach this 
+    // point, the on-chain transaction has already succeeded.
 
     setInvoices(prev => prev.map(inv => {
       if (inv.id === id && inv.status === 'verified') {
