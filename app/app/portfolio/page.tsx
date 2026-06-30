@@ -167,9 +167,9 @@ export default function PortfolioPage() {
                           </span>
                         </td>
                         <td>
-                          {inv.txHash ? (
+                        {inv.fundTxHash && /^[0-9a-fA-F]{64}$/.test(inv.fundTxHash) ? (
                             <a
-                              href={`https://stellar.expert/explorer/testnet/tx/${inv.txHash}`}
+                              href={`https://stellar.expert/explorer/testnet/tx/${inv.fundTxHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[rgba(0,240,255,0.1)] border border-transparent hover:border-[rgba(0,240,255,0.2)]"
@@ -246,9 +246,13 @@ export default function PortfolioPage() {
 
                   <div className="flex items-center justify-between text-xs relative z-10">
                     <span style={{ color: 'var(--text-muted)' }}>Due: <span className="font-semibold text-[var(--text-primary)]">{inv.dueDate}</span></span>
-                    <a href={`https://stellar.expert/explorer/testnet/tx/${inv.txHash}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline" style={{ color: 'var(--neon-cyan)' }}>
-                      View Tx <ArrowUpRight size={10} />
-                    </a>
+                    {inv.fundTxHash && /^[0-9a-fA-F]{64}$/.test(inv.fundTxHash) ? (
+                      <a href={`https://stellar.expert/explorer/testnet/tx/${inv.fundTxHash}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline" style={{ color: 'var(--neon-cyan)' }}>
+                        View Tx <ArrowUpRight size={10} />
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }} className="text-xs">Tx Pending</span>
+                    )}
                   </div>
                 </div>
               ))
