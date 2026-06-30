@@ -412,7 +412,6 @@ stellar contract deploy \
 ## 🚧 Roadmap & Future Plans
 
 - [ ] **Mainnet Deployment**: Deploy to Stellar Mainnet with real USDC integration.
-- [ ] **Multi-Wallet Support**: Add xBull, Albedo, and LOBSTR wallet adapters.
 - [ ] **Invoice NFTs**: Represent each funded invoice as a transferable Soroban NFT.
 - [ ] **Yield Calculation**: Automatic on-chain APY calculation for investors.
 - [ ] **IPFS Document Storage**: Store invoice PDFs on IPFS with on-chain CID verification.
