@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-  "invoice",
+  "invoice", "reserve_pool", "secondary_market",
   "token",
 ]
 
