@@ -11,9 +11,9 @@ import {
   Briefcase
 } from 'lucide-react';
 
-export default function MarketplacePage() {
+export default function SecondaryMarketPage() {
   const { isConnected, publicKey, connect, isConnecting, xlmBalance } = useWallet();
-  const { invoices, fundInvoice, addNotification } = useInvoiceStore();
+  const { secondaryListings, invoices, buyFromSecondaryMarket, addNotification } = useInvoiceStore();
   
   const [fundingId, setFundingId] = useState<string | null>(null);
 
@@ -21,14 +21,37 @@ export default function MarketplacePage() {
   // For demo, we assume KYC is approved if connected
   const isKycApproved = isConnected;
 
-  // Show only verified invoices in marketplace
-  const availableInvoices = invoices.filter(inv => inv.status === 'verified');
+  // Show active listings that don't belong to the current user
+  const activeListings = secondaryListings.filter(l => l.active && l.seller !== publicKey);
 
-  const handleFund = async (invoiceId: string, amount: number) => {
+  const getInvoiceData = (id: string) => invoices.find(inv => inv.id === id);
+
+  // Dynamic stats from real data
+  const allListings = secondaryListings;
+  const completedListings = allListings.filter(l => !l.active);
+  
+  // Total volume = sum of all listing prices (active + completed)
+  const totalVolume = allListings.reduce((sum, l) => sum + l.price, 0);
+  
+  // Avg discount = how much cheaper listings are vs face value
+  const listingsWithInvoice = allListings.filter(l => getInvoiceData(l.invoiceId));
+  const avgDiscount = listingsWithInvoice.length > 0
+    ? listingsWithInvoice.reduce((sum, l) => {
+        const inv = getInvoiceData(l.invoiceId)!;
+        return sum + Math.max(0, ((inv.amount - l.price) / inv.amount) * 100);
+      }, 0) / listingsWithInvoice.length
+    : 0;
+  
+  // Safe transfers = completed trades out of all trades  
+  const safeTransfersPct = allListings.length > 0
+    ? Math.round((completedListings.length / allListings.length) * 100)
+    : 100;
+
+  const handleBuy = async (invoiceId: string, price: number) => {
     if (!publicKey) return;
     
     // Check balance (demo logic)
-    if (xlmBalance < amount) {
+    if (xlmBalance < price) {
       addNotification('error', 'Insufficient Funds', 'You do not have enough XLM to fund this invoice.');
       return;
     }
@@ -36,31 +59,19 @@ export default function MarketplacePage() {
     setFundingId(invoiceId);
 
     try {
-      // Find invoice to get supplier address
-      const invoice = invoices.find(i => i.id === invoiceId);
-      if (!invoice) throw new Error('Invoice not found');
+      // Find listing
+      const listing = secondaryListings.find(l => l.invoiceId === invoiceId && l.active);
+      if (!listing) throw new Error('Listing not found');
 
-      // Real on-chain funding
-      // Use the actual on-chain chain ID stored when minting
-      // Fall back to parsing the local ID if chainId wasn't stored
-      const onChainId = typeof invoice.chainId === 'number' 
-        ? invoice.chainId 
-        : parseInt(invoiceId.replace('INV-', ''), 10);
-        
-      const txHash = await fundInvoiceOnChain(publicKey, BigInt(onChainId));
+      // 1. Simulate on-chain call (we don't have a real soroban contract for secondary market yet in JS bindings, 
+      // but we deployed the rust contract locally. We'll just simulate it to complete the MVP frontend).
+      await new Promise(resolve => setTimeout(resolve, 2500));
 
-      // Check if it returned 'already_funded' gracefully
-      if (txHash === 'already_funded') {
-        fundInvoice(invoiceId, publicKey, 'already_funded');
-        addNotification('success', 'Already Funded', `Invoice ${invoiceId} is already funded on-chain.`);
-        return;
-      }
-
-      fundInvoice(invoiceId, publicKey, txHash);
+      buyFromSecondaryMarket(invoiceId, publicKey);
       addNotification(
         'success',
-        'Investment Successful',
-        `You have successfully funded invoice ${invoiceId}. Asset transferred to supplier.`
+        'Purchase Successful',
+        `You have successfully purchased invoice ${invoiceId} from the secondary market.`
       );
     } catch (error) {
       console.error(error);
@@ -75,9 +86,9 @@ export default function MarketplacePage() {
       {/* Header */}
       <div className="page-header flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1>Marketplace</h1>
+          <h1>Secondary Market</h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Invest in verified RWA invoices and earn yield.
+            Trade funded invoices with other investors for liquidity.
           </p>
         </div>
         
@@ -125,10 +136,10 @@ export default function MarketplacePage() {
       {/* Market Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 stagger-children">
         {[
-          { label: 'Available Supply', value: availableInvoices.reduce((acc, inv) => acc + inv.amount, 0).toLocaleString(), icon: Coins, color: 'var(--neon-cyan)' },
-          { label: 'Active Opportunities', value: availableInvoices.length.toString(), icon: Activity, color: 'var(--neon-purple)' },
-          { label: 'Avg. Yield (APR)', value: '8.5%', icon: TrendingUp, color: 'var(--neon-green)' },
-          { label: 'Default Rate', value: '0.0%', icon: Shield, color: 'var(--text-primary)' },
+          { label: 'Total Volume', value: totalVolume > 0 ? `${totalVolume.toLocaleString()} XLM` : '0 XLM', icon: Coins, color: 'var(--neon-cyan)' },
+          { label: 'Active Listings', value: activeListings.length.toString(), icon: Activity, color: 'var(--neon-purple)' },
+          { label: 'Avg. Discount', value: avgDiscount > 0 ? `${avgDiscount.toFixed(1)}%` : '0.0%', icon: TrendingUp, color: 'var(--neon-green)' },
+          { label: 'Safe Transfers', value: `${safeTransfersPct}%`, icon: Shield, color: 'var(--text-primary)' },
         ].map((stat, i) => (
           <div key={i} className="card p-5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 opacity-10 group-hover:opacity-20 transition-opacity duration-500" style={{ background: `radial-gradient(circle at top right, ${stat.color}, transparent 70%)` }} />
@@ -152,19 +163,23 @@ export default function MarketplacePage() {
           Live Opportunities
         </h2>
 
-        {availableInvoices.length === 0 ? (
+        {activeListings.length === 0 ? (
           <div className="card p-16 text-center animate-fade-in-up card-glow" style={{ borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)' }}>
             <div className="empty-state-icon mb-6">
               <TrendingUp size={36} style={{ color: 'var(--text-muted)' }} />
             </div>
             <h3 className="text-xl font-bold mb-2">No Active Listings</h3>
             <p className="text-sm max-w-md mx-auto leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              There are currently no verified invoices available for funding in the marketplace. Check back soon.
+              There are currently no invoices listed on the secondary market. Check back soon.
             </p>
           </div>
         ) : (
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 stagger-children">
-            {availableInvoices.map((inv) => (
+            {activeListings.map((listing) => {
+              const inv = getInvoiceData(listing.invoiceId);
+              if (!inv) return null;
+              
+              return (
               <div
                 key={inv.id}
                 className="card p-0 overflow-hidden flex flex-col group card-glow transition-all duration-300 hover:-translate-y-1"
@@ -185,19 +200,26 @@ export default function MarketplacePage() {
                     </div>
                   </div>
 
-                  {/* Funding amount */}
-                  <div className="mb-6 p-4 rounded-xl bg-[rgba(0,0,0,0.3)] border border-[rgba(255,255,255,0.05)]">
-                    <div className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Target Amount</div>
-                    <div className="text-2xl font-black neon-text-subtle" style={{ color: 'var(--neon-purple)', textShadow: '0 0 15px rgba(191,90,242,0.4)' }}>
-                      {inv.amount.toLocaleString()} <span className="text-sm font-normal opacity-50">XLM</span>
+                  <div className="mb-6 p-4 rounded-xl bg-[rgba(0,0,0,0.3)] border border-[rgba(255,255,255,0.05)] flex justify-between items-center">
+                    <div>
+                      <div className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Asking Price</div>
+                      <div className="text-2xl font-black neon-text-subtle" style={{ color: 'var(--neon-green)', textShadow: '0 0 15px rgba(57,255,20,0.4)' }}>
+                        {listing.price.toLocaleString()} <span className="text-sm font-normal opacity-50">XLM</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Face Value</div>
+                      <div className="text-sm font-bold text-gray-400 line-through">
+                        {inv.amount.toLocaleString()} XLM
+                      </div>
                     </div>
                   </div>
 
                   {/* Details grid */}
                   <div className="grid grid-cols-2 gap-y-4 gap-x-2 mb-8">
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Expected Yield</div>
-                      <div className="text-sm font-bold text-green-400">~8.5% APR</div>
+                      <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Seller</div>
+                      <div className="text-xs font-mono">{shortenAddress(listing.seller)}</div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Due Date</div>
@@ -218,10 +240,10 @@ export default function MarketplacePage() {
                   {/* Action button */}
                   <div className="mt-auto pt-5 border-t border-[rgba(255,255,255,0.05)]">
                     <button
-                      onClick={() => handleFund(inv.id, inv.amount)}
-                      disabled={fundingId === inv.id || !isConnected || !isKycApproved || xlmBalance < inv.amount}
-                      className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold transition-all shadow-[0_0_20px_rgba(191,90,242,0.15)] hover:shadow-[0_0_30px_rgba(191,90,242,0.25)] hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:transform-none"
-                      style={{ background: 'linear-gradient(135deg, rgba(191,90,242,0.15), rgba(191,90,242,0.05))', color: 'var(--neon-purple)', border: '1px solid rgba(191,90,242,0.3)' }}
+                      onClick={() => handleBuy(inv.id, listing.price)}
+                      disabled={fundingId === inv.id || !isConnected || !isKycApproved || xlmBalance < listing.price}
+                      className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold transition-all shadow-[0_0_20px_rgba(57,255,20,0.15)] hover:shadow-[0_0_30px_rgba(57,255,20,0.25)] hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:transform-none"
+                      style={{ background: 'linear-gradient(135deg, rgba(57,255,20,0.15), rgba(57,255,20,0.05))', color: 'var(--neon-green)', border: '1px solid rgba(57,255,20,0.3)' }}
                     >
                       {fundingId === inv.id ? (
                         <>
@@ -231,20 +253,21 @@ export default function MarketplacePage() {
                       ) : (
                         <>
                           <DollarSign size={18} />
-                          Fund Invoice
+                          Buy Invoice
                         </>
                       )}
                     </button>
                     {!isKycApproved && isConnected && (
-                      <p className="text-[10px] text-center mt-2 text-red-400">KYC required to fund</p>
+                      <p className="text-[10px] text-center mt-2 text-red-400">KYC required to purchase</p>
                     )}
-                    {isConnected && xlmBalance < inv.amount && isKycApproved && (
+                    {isConnected && xlmBalance < listing.price && isKycApproved && (
                       <p className="text-[10px] text-center mt-2 text-yellow-500">Insufficient XLM balance</p>
                     )}
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useWallet } from '@/lib/wallet-context';
 import { useInvoiceStore } from '@/lib/invoice-store';
 import { shortenAddress } from '@/lib/stellar';
@@ -11,7 +12,10 @@ import {
 
 export default function PortfolioPage() {
   const { isConnected, publicKey, connect, isConnecting } = useWallet();
-  const { invoices } = useInvoiceStore();
+  const { invoices, secondaryListings, listOnSecondaryMarket, cancelSecondaryListing } = useInvoiceStore();
+  
+  const [listingId, setListingId] = useState<string | null>(null);
+  const [listingPrice, setListingPrice] = useState<string>('');
 
   const mySupplied = publicKey ? invoices.filter(inv => inv.supplier === publicKey) : [];
   const myInvested = publicKey ? invoices.filter(inv => inv.investor === publicKey) : [];
@@ -28,6 +32,13 @@ export default function PortfolioPage() {
       case 'defaulted': return 'badge-danger';
       default: return 'badge-neon';
     }
+  };
+
+  const handleList = (invoiceId: string) => {
+    if (!listingPrice || parseFloat(listingPrice) <= 0) return;
+    listOnSecondaryMarket(invoiceId, publicKey!, parseFloat(listingPrice));
+    setListingId(null);
+    setListingPrice('');
   };
 
   return (
@@ -244,7 +255,7 @@ export default function PortfolioPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs relative z-10">
+                  <div className="flex items-center justify-between text-xs relative z-10 mb-3">
                     <span style={{ color: 'var(--text-muted)' }}>Due: <span className="font-semibold text-[var(--text-primary)]">{inv.dueDate}</span></span>
                     {inv.fundTxHash && /^[0-9a-fA-F]{64}$/.test(inv.fundTxHash) ? (
                       <a href={`https://stellar.expert/explorer/testnet/tx/${inv.fundTxHash}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline" style={{ color: 'var(--neon-cyan)' }}>
@@ -253,6 +264,62 @@ export default function PortfolioPage() {
                     ) : (
                       <span style={{ color: 'var(--text-muted)' }} className="text-xs">Tx Pending</span>
                     )}
+                  </div>
+                  
+                  {/* Secondary Market Listing Actions */}
+                  <div className="relative z-10 pt-3 border-t border-[rgba(255,255,255,0.05)] mt-3">
+                    {(() => {
+                      const activeListing = secondaryListings.find(l => l.invoiceId === inv.id && l.active);
+                      
+                      if (activeListing) {
+                        return (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[var(--neon-purple)]">Listed: {activeListing.price} XLM</span>
+                            <button 
+                              onClick={() => cancelSecondaryListing(inv.id, publicKey!)}
+                              className="text-xs px-2 py-1 rounded bg-[rgba(255,68,68,0.1)] text-[var(--danger)] hover:bg-[rgba(255,68,68,0.2)] transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        );
+                      }
+                      
+                      if (listingId === inv.id) {
+                        return (
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="number" 
+                              value={listingPrice}
+                              onChange={(e) => setListingPrice(e.target.value)}
+                              placeholder="Price (XLM)"
+                              className="w-full text-xs bg-[rgba(0,0,0,0.3)] border border-[rgba(255,255,255,0.1)] rounded px-2 py-1 text-white"
+                            />
+                            <button 
+                              onClick={() => handleList(inv.id)}
+                              className="text-xs px-2 py-1 rounded bg-[rgba(57,255,20,0.1)] text-[var(--neon-green)] font-bold whitespace-nowrap"
+                            >
+                              List
+                            </button>
+                            <button 
+                              onClick={() => setListingId(null)}
+                              className="text-xs px-2 py-1 rounded bg-[rgba(255,255,255,0.1)] text-white whitespace-nowrap"
+                            >
+                              X
+                            </button>
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <button 
+                          onClick={() => setListingId(inv.id)}
+                          className="w-full text-xs py-1.5 rounded-lg border border-[rgba(191,90,242,0.3)] text-[var(--neon-purple)] hover:bg-[rgba(191,90,242,0.1)] transition-colors flex items-center justify-center gap-1.5 font-bold"
+                        >
+                          <TrendingUp size={12} /> List on Secondary Market
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               ))

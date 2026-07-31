@@ -9,6 +9,7 @@ export interface Invoice {
   supplier: string;
   buyer: string;
   status: InvoiceStatus;
+  riskTier?: 'A' | 'B' | 'C';
   createdAt: string;
   verifiedAt?: string;
   fundedAt?: string;
@@ -40,4 +41,12 @@ export interface Notification {
   title: string;
   message: string;
   timestamp: number;
+}
+
+export interface SecondaryListing {
+  invoiceId: string;
+  seller: string;
+  price: number;
+  active: boolean;
+  createdAt: string;
 }

@@ -16,7 +16,8 @@ const navItems = [
   { href: '/app', label: 'Overview', icon: LayoutDashboard },
   { href: '/app/mint', label: 'Mint Invoice', icon: FileText },
   { href: '/app/requests', label: 'Pending Requests', icon: ClipboardCheck },
-  { href: '/app/marketplace', label: 'Marketplace', icon: TrendingUp },
+  { href: '/app/marketplace', label: 'Primary Market', icon: TrendingUp },
+  { href: '/app/secondary-market', label: 'Secondary Market', icon: TrendingUp },
   { href: '/app/portfolio', label: 'Portfolio', icon: Briefcase },
   { href: '/app/send', label: 'Send XLM', icon: Send },
   { href: '/app/admin', label: 'Admin', icon: Shield },
@@ -63,6 +64,7 @@ function NotificationToast() {
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { isConnected, isConnecting, publicKey, xlmBalance, connect, disconnect, shortenedAddress } = useWallet();
+  const { reservePoolBalance } = useInvoiceStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -260,6 +262,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 Explorer <ExternalLink size={12} />
               </a>
             )}
+            
+            <div className="hidden sm:flex flex-col items-end px-3">
+              <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>Reserve Pool</span>
+              <span className="text-sm font-bold neon-text-subtle" style={{ color: 'var(--neon-green)' }}>{reservePoolBalance.toLocaleString()} XLM</span>
+            </div>
+
             <div className="badge badge-neon px-3 py-1.5 shadow-[0_0_15px_rgba(57,255,20,0.1)]">
               <span className="status-dot status-dot-active" />
               Stellar Testnet

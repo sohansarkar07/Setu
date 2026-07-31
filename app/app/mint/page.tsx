@@ -19,6 +19,8 @@ export default function MintInvoicePage() {
   const [dueDate, setDueDate] = useState('');
   const [buyerAddress, setBuyerAddress] = useState('');
   const [isMinting, setIsMinting] = useState(false);
+  const [isScoring, setIsScoring] = useState(false);
+  const [riskTier, setRiskTier] = useState<'A' | 'B' | 'C' | null>(null);
   const [mintResult, setMintResult] = useState<{ success: boolean; invoiceId?: string; txHash?: string; error?: string } | null>(null);
   const [activeField, setActiveField] = useState<string | null>(null);
 
@@ -51,8 +53,38 @@ export default function MintInvoicePage() {
 
     setIsMinting(true);
     setMintResult(null);
+    setRiskTier(null);
 
     try {
+      // 1. Call AI Risk Scoring via Groq
+      setIsScoring(true);
+      
+      let computedRisk: 'A' | 'B' | 'C' = 'B';
+      try {
+        const res = await fetch('/api/risk-score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: parsedAmount,
+            description: description.trim(),
+            buyerAddress: buyerAddress.trim(),
+            supplierAddress: publicKey
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tier === 'A' || data.tier === 'B' || data.tier === 'C') {
+            computedRisk = data.tier;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch risk score:', e);
+      }
+      
+      setRiskTier(computedRisk);
+      setIsScoring(false);
+      setIsMinting(true);
       // Real on-chain Soroban transaction
       const { txHash, chainId } = await mintInvoiceOnChain(
         publicKey,
@@ -68,6 +100,7 @@ export default function MintInvoicePage() {
         dueDate,
         supplier: publicKey,
         buyer: buyerAddress.trim(),
+        riskTier: computedRisk,
         txHash: txHash,
         chainId: chainId,
       });
@@ -96,6 +129,7 @@ export default function MintInvoicePage() {
       addNotification('error', 'Minting Failed', errMsg);
       setMintResult({ success: false, error: errMsg });
     } finally {
+      setIsScoring(false);
       setIsMinting(false);
     }
   };
@@ -178,6 +212,18 @@ export default function MintInvoicePage() {
                   {mintResult.txHash.slice(0, 16)}...{mintResult.txHash.slice(-8)}
                   <ExternalLink size={14} />
                 </a>
+              </div>
+            )}
+            {riskTier && (
+              <div>
+                <div className="text-xs uppercase tracking-wider font-semibold mb-1 mt-2" style={{ color: 'var(--text-muted)' }}>AI Risk Tier</div>
+                <div className="font-mono text-sm px-3 py-2 rounded-lg inline-block font-bold" style={{ 
+                  background: riskTier === 'A' ? 'rgba(57, 255, 20, 0.1)' : riskTier === 'B' ? 'rgba(255, 170, 0, 0.1)' : 'rgba(255, 68, 68, 0.1)',
+                  color: riskTier === 'A' ? 'var(--neon-green)' : riskTier === 'B' ? 'var(--warning)' : 'var(--danger)',
+                  border: `1px solid ${riskTier === 'A' ? 'var(--neon-green)' : riskTier === 'B' ? 'var(--warning)' : 'var(--danger)'}`
+                }}>
+                  Tier {riskTier}
+                </div>
               </div>
             )}
             {mintResult.error && (
@@ -305,22 +351,32 @@ export default function MintInvoicePage() {
             </p>
           </div>
 
-          {/* Submit */}
-          <div className="pt-4 mt-8 border-t border-[rgba(255,255,255,0.05)]">
-            <button
-              onClick={handleMint}
-              disabled={isMinting || !isConnected}
-              className="btn-neon w-full flex items-center justify-center gap-3 py-4 text-base shadow-[0_0_30px_rgba(57,255,20,0.2)] hover:shadow-[0_0_40px_rgba(57,255,20,0.3)]"
+          {/* Submit button */}
+          <div className="mt-8">
+            <button 
+              onClick={handleMint} 
+              disabled={!isConnected || isScoring || isMinting || getFormProgress() < 100}
+              className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-lg font-bold transition-all
+                ${getFormProgress() === 100 && isConnected && !isScoring && !isMinting
+                  ? 'bg-[var(--neon-green)] text-black shadow-[0_0_20px_rgba(57,255,20,0.4)] hover:shadow-[0_0_30px_rgba(57,255,20,0.6)] hover:scale-[1.02]' 
+                  : 'bg-[rgba(255,255,255,0.05)] text-[var(--text-muted)] cursor-not-allowed border border-[rgba(255,255,255,0.1)]'
+                }
+              `}
             >
-              {isMinting ? (
+              {isScoring ? (
                 <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Minting On-Chain...
+                  <Loader2 size={24} className="animate-spin" />
+                  <span className="animate-pulse">AI Risk Engine Analyzing...</span>
+                </>
+              ) : isMinting ? (
+                <>
+                  <Loader2 size={24} className="animate-spin" />
+                  <span className="animate-pulse">Minting on Soroban...</span>
                 </>
               ) : (
                 <>
-                  <FileCheck size={20} />
-                  Mint Draft Invoice (On-Chain)
+                  <CheckCircle size={24} />
+                  Mint Invoice
                 </>
               )}
             </button>

@@ -1,12 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Invoice, InvoiceStatus, KYCRecord, Notification, NotificationType } from './types';
+import { Invoice, InvoiceStatus, KYCRecord, Notification, NotificationType, SecondaryListing } from './types';
 
 interface InvoiceStoreContextType {
   invoices: Invoice[];
   kycRecords: KYCRecord[];
   notifications: Notification[];
+  secondaryListings: SecondaryListing[];
+  reservePoolBalance: number;
   mintInvoice: (invoice: Omit<Invoice, 'id' | 'status' | 'createdAt'>) => Invoice;
   verifyInvoice: (id: string, txHash?: string) => void;
   fundInvoice: (id: string, investor: string, txHash?: string) => boolean;
@@ -18,6 +20,9 @@ interface InvoiceStoreContextType {
   isKYCApproved: (address: string) => boolean;
   addNotification: (type: NotificationType, title: string, message: string) => void;
   removeNotification: (id: string) => void;
+  listOnSecondaryMarket: (invoiceId: string, seller: string, price: number) => void;
+  buyFromSecondaryMarket: (invoiceId: string, buyer: string) => void;
+  cancelSecondaryListing: (invoiceId: string, seller: string) => void;
 }
 
 const InvoiceStoreContext = createContext<InvoiceStoreContextType | undefined>(undefined);
@@ -28,6 +33,8 @@ export function InvoiceStoreProvider({ children }: { children: ReactNode }) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [kycRecords, setKycRecords] = useState<KYCRecord[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [secondaryListings, setSecondaryListings] = useState<SecondaryListing[]>([]);
+  const [reservePoolBalance, setReservePoolBalance] = useState<number>(0);
 
   const addNotification = useCallback((type: NotificationType, title: string, message: string) => {
     const id = `notif_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -79,6 +86,9 @@ export function InvoiceStoreProvider({ children }: { children: ReactNode }) {
 
     setInvoices(prev => prev.map(inv => {
       if (inv.id === id && inv.status === 'verified') {
+        const skimAmount = inv.amount * 0.02; // 2% reserve skim
+        setReservePoolBalance(prev => prev + skimAmount);
+        
         return {
           ...inv,
           status: 'funded' as InvoiceStatus,
@@ -124,6 +134,34 @@ export function InvoiceStoreProvider({ children }: { children: ReactNode }) {
     return kycRecords.some(r => r.address === address && r.approved);
   }, [kycRecords]);
 
+  const listOnSecondaryMarket = useCallback((invoiceId: string, seller: string, price: number) => {
+    setSecondaryListings(prev => [...prev, {
+      invoiceId,
+      seller,
+      price,
+      active: true,
+      createdAt: new Date().toISOString()
+    }]);
+    addNotification('success', 'Listed on Market', `Invoice ${invoiceId} listed for ${price} USDC`);
+  }, [addNotification]);
+
+  const cancelSecondaryListing = useCallback((invoiceId: string, seller: string) => {
+    setSecondaryListings(prev => prev.map(l => 
+      (l.invoiceId === invoiceId && l.seller === seller) ? { ...l, active: false } : l
+    ));
+    addNotification('info', 'Listing Cancelled', `Your listing for ${invoiceId} was cancelled`);
+  }, [addNotification]);
+
+  const buyFromSecondaryMarket = useCallback((invoiceId: string, buyer: string) => {
+    setSecondaryListings(prev => prev.map(l => 
+      (l.invoiceId === invoiceId) ? { ...l, active: false } : l
+    ));
+    setInvoices(prev => prev.map(inv => 
+      (inv.id === invoiceId) ? { ...inv, investor: buyer } : inv
+    ));
+    addNotification('success', 'Invoice Purchased', `You successfully purchased invoice ${invoiceId}`);
+  }, [addNotification]);
+
   return (
     <InvoiceStoreContext.Provider value={{
       invoices,
@@ -140,6 +178,11 @@ export function InvoiceStoreProvider({ children }: { children: ReactNode }) {
       isKYCApproved,
       addNotification,
       removeNotification,
+      secondaryListings,
+      reservePoolBalance,
+      listOnSecondaryMarket,
+      cancelSecondaryListing,
+      buyFromSecondaryMarket,
     }}>
       {children}
     </InvoiceStoreContext.Provider>
