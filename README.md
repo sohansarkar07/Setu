@@ -44,6 +44,7 @@
   <a href="#problem-statement">Problem</a> •
   <a href="#solution">Solution</a> •
   <a href="#v2-features">v2 Features</a> •
+  <a href="#contract-credentials">Contract Credentials</a> •
   <a href="#market-opportunity">Market Opportunity</a> •
   <a href="#vision">Vision</a> •
   <a href="#why-soroban">Why Soroban</a> •
@@ -95,6 +96,20 @@ Small and medium-sized businesses are trapped in a cash-flow crisis due to slow 
 | 🔐 **Admin Access Control** | Super-admin wallet + delegate admin system | ✅ Live |
 | 📊 **Dynamic Analytics** | Live stats: Volume, Avg Discount, Reserve Balance | ✅ Live |
 | 🧪 **Smart Contract Tests** | 6/6 Soroban unit tests passing in CI | ✅ Live |
+
+---
+
+<a name="contract-credentials"></a>
+## 🔗 Contract Credentials
+
+| Category | Value |
+|:---|:---|
+| **Invoice Contract ID** | `CDWDT2VG2LSHG6D2JIEPN43UWF6NF3K5VV5RGDNIT2KF5NJJ3BWZEZIM` |
+| **Token Contract ID** | `CCMEDRG2QBTQA27BPU4DAFOEWW2Q7WNINN6NZX4UUEBYBDJUG47THZP7` |
+| **Token Init Tx Hash** | `59004728b4f2741782ec32f7f0d9a7b372ce0b754c2340c4b180adfe204b08d0` |
+| **Invoice Init Tx Hash** | `6b1abd80675bb62d09e69a1296ac256d26d71210cc5128407f2e674da02536e6` |
+| **Stellar Explorer** | [View Invoice Contract](https://stellar.expert/explorer/testnet/contract/CDWDT2VG2LSHG6D2JIEPN43UWF6NF3K5VV5RGDNIT2KF5NJJ3BWZEZIM) |
+| **Network** | Stellar Testnet (Soroban) |
 
 ---
 
