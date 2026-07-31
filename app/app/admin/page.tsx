@@ -5,6 +5,7 @@ import { useWallet } from '@/lib/wallet-context';
 import { useInvoiceStore } from '@/lib/invoice-store';
 import { shortenAddress } from '@/lib/stellar';
 import { approveKYCOnChain, revokeKYCOnChain } from '@/lib/soroban';
+import TxHashBadge from '@/components/TxHashBadge';
 import {
   Shield, UserCheck, UserX, Loader2, Users, Wallet,
   CheckCircle, Lock, Crown, UserPlus, Trash2,
@@ -22,7 +23,7 @@ export default function AdminPage() {
   const [address, setAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [actionType, setActionType] = useState<'add' | 'remove' | null>(null);
-  const [kycList, setKycList] = useState<{ address: string; addedAt: string }[]>([]);
+  const [kycList, setKycList] = useState<{ address: string; addedAt: string; txHash?: string }[]>([]);
 
   // Admin management state
   const [adminList, setAdminList] = useState<{ address: string; addedAt: string; addedBy: string }[]>([
@@ -51,7 +52,7 @@ export default function AdminPage() {
       if (action === 'add') {
         txHash = await approveKYCOnChain(publicKey, address);
         addNotification('success', 'KYC Approved On-Chain', `Investor ${shortenAddress(address)} approved. Tx: ${txHash.slice(0, 8)}...`);
-        setKycList(prev => [{ address, addedAt: new Date().toISOString() }, ...prev]);
+        setKycList(prev => [{ address, addedAt: new Date().toISOString(), txHash }, ...prev]);
       } else {
         txHash = await revokeKYCOnChain(publicKey, address);
         addNotification('success', 'KYC Revoked On-Chain', `Investor ${shortenAddress(address)} revoked. Tx: ${txHash.slice(0, 8)}...`);
@@ -249,7 +250,10 @@ export default function AdminPage() {
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Added {new Date(record.addedAt).toLocaleDateString()}</div>
                   </div>
                 </div>
-                <span className="badge badge-neon text-xs" style={{ background: 'rgba(57,255,20,0.1)', color: 'var(--neon-green)', borderColor: 'rgba(57,255,20,0.2)' }}>Active</span>
+                <div className="flex items-center gap-3">
+                  {record.txHash && <TxHashBadge hash={record.txHash} />}
+                  <span className="badge badge-neon text-xs" style={{ background: 'rgba(57,255,20,0.1)', color: 'var(--neon-green)', borderColor: 'rgba(57,255,20,0.2)' }}>Active</span>
+                </div>
               </div>
             ))}
           </div>
