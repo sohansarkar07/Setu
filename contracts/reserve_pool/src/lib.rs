@@ -1,11 +1,11 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, 
+    contract, contractimpl, contracttype, contracterror, symbol_short, Address, Env, 
     panic_with_error, token
 };
 
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum ReservePoolError {
     NotAuthorized = 1,

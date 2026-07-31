@@ -1,7 +1,7 @@
 #![no_std]
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Vec,
-    log, panic_with_error,
+    log, panic_with_error, token
 };
 
 // ─── Error Codes ────────────────────────────────────────────────────────────────
@@ -41,6 +41,7 @@ pub struct Invoice {
     pub due_date: u64,
     pub status: InvoiceStatus,
     pub investor: Address,
+    pub risk_tier: String, // 'A', 'B', or 'C'
     pub created_at: u64,
     pub verified_at: u64,
     pub funded_at: u64,
@@ -54,6 +55,7 @@ pub enum DataKey {
     Invoice(u64),
     KycApproved(Address),
     TokenContract,
+    ReservePool,
 }
 
 // ─── Contract ───────────────────────────────────────────────────────────────────
@@ -62,8 +64,8 @@ pub struct SetuInvoiceContract;
 
 #[contractimpl]
 impl SetuInvoiceContract {
-    /// Initialize the contract with an admin address and optional token contract
-    pub fn initialize(env: Env, admin: Address, token_contract: Address) {
+    /// Initialize the contract with an admin address, token contract, and reserve pool
+    pub fn initialize(env: Env, admin: Address, token_contract: Address, reserve_pool: Address) {
         if env.storage().instance().has(&DataKey::Admin) {
             panic!("Already initialized");
         }
@@ -73,6 +75,7 @@ impl SetuInvoiceContract {
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::InvoiceCount, &0u64);
         env.storage().instance().set(&DataKey::TokenContract, &token_contract);
+        env.storage().instance().set(&DataKey::ReservePool, &reserve_pool);
         
         log!(&env, "Setu Invoice Contract initialized by admin: {}", admin);
         
@@ -91,6 +94,7 @@ impl SetuInvoiceContract {
         amount: i128,
         description: String,
         due_date: u64,
+        risk_tier: String,
     ) -> u64 {
         supplier.require_auth();
         
@@ -111,6 +115,7 @@ impl SetuInvoiceContract {
             due_date,
             status: InvoiceStatus::Draft,
             investor: supplier.clone(), // placeholder
+            risk_tier,
             created_at: env.ledger().timestamp(),
             verified_at: 0,
             funded_at: 0,
@@ -190,7 +195,22 @@ impl SetuInvoiceContract {
 
         env.storage().instance().set(&DataKey::Invoice(invoice_id), &invoice);
 
-        log!(&env, "Invoice {} funded by investor {} for amount {}", invoice_id, investor, invoice.amount);
+        // Perform token transfer
+        let token_contract: Address = env.storage().instance().get(&DataKey::TokenContract).unwrap();
+        let token_client = token::Client::new(&env, &token_contract);
+
+        // Calculate 2% reserve skim
+        let reserve_skim = invoice.amount * 2 / 100;
+        let supplier_amount = invoice.amount - reserve_skim;
+
+        let reserve_pool: Address = env.storage().instance().get(&DataKey::ReservePool).unwrap();
+        
+        // Transfer to supplier
+        token_client.transfer(&investor, &invoice.supplier, &supplier_amount);
+        // Transfer skim to reserve pool
+        token_client.transfer(&investor, &reserve_pool, &reserve_skim);
+
+        log!(&env, "Invoice {} funded by investor {} for amount {} ({} to supplier, {} to reserve)", invoice_id, investor, invoice.amount, supplier_amount, reserve_skim);
         
         // Emit event
         env.events().publish(
@@ -324,8 +344,9 @@ mod test {
         
         let admin = Address::generate(&env);
         let token = Address::generate(&env);
+        let reserve_pool = Address::generate(&env);
         
-        client.initialize(&admin, &token);
+        client.initialize(&admin, &token, &reserve_pool);
         
         assert_eq!(client.get_admin(), admin);
         assert_eq!(client.get_invoice_count(), 0);
@@ -341,10 +362,11 @@ mod test {
         
         let admin = Address::generate(&env);
         let token = Address::generate(&env);
+        let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
         
-        client.initialize(&admin, &token);
+        client.initialize(&admin, &token, &reserve_pool);
         
         let invoice_id = client.mint_invoice(
             &supplier,
@@ -352,6 +374,7 @@ mod test {
             &1000_i128,
             &String::from_str(&env, "Web Dev Services"),
             &1700000000_u64,
+            &String::from_str(&env, "A"),
         );
         
         assert_eq!(invoice_id, 1);
@@ -374,16 +397,18 @@ mod test {
         
         let admin = Address::generate(&env);
         let token = Address::generate(&env);
+        let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
         
-        client.initialize(&admin, &token);
+        client.initialize(&admin, &token, &reserve_pool);
         client.mint_invoice(
             &supplier,
             &buyer,
             &1000_i128,
             &String::from_str(&env, "Invoice 1"),
             &1700000000_u64,
+            &String::from_str(&env, "A"),
         );
         
         client.verify_invoice(&buyer, &1);
@@ -402,17 +427,19 @@ mod test {
         
         let admin = Address::generate(&env);
         let token = Address::generate(&env);
+        let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
         let investor = Address::generate(&env);
         
-        client.initialize(&admin, &token);
+        client.initialize(&admin, &token, &reserve_pool);
         client.mint_invoice(
             &supplier,
             &buyer,
             &5000_i128,
             &String::from_str(&env, "Invoice for funding"),
             &1700000000_u64,
+            &String::from_str(&env, "A"),
         );
         
         // Verify
@@ -441,17 +468,19 @@ mod test {
         
         let admin = Address::generate(&env);
         let token = Address::generate(&env);
+        let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
         let investor = Address::generate(&env);
         
-        client.initialize(&admin, &token);
+        client.initialize(&admin, &token, &reserve_pool);
         client.mint_invoice(
             &supplier,
             &buyer,
             &1000_i128,
             &String::from_str(&env, "Test invoice"),
             &1700000000_u64,
+            &String::from_str(&env, "A"),
         );
         
         client.verify_invoice(&buyer, &1);
@@ -470,12 +499,13 @@ mod test {
         
         let admin = Address::generate(&env);
         let token = Address::generate(&env);
+        let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
         let investor = Address::generate(&env);
         
         // 1. Initialize
-        client.initialize(&admin, &token);
+        client.initialize(&admin, &token, &reserve_pool);
         
         // 2. Mint invoice
         let id = client.mint_invoice(
@@ -484,6 +514,7 @@ mod test {
             &10000_i128,
             &String::from_str(&env, "Full lifecycle test"),
             &1700000000_u64,
+            &String::from_str(&env, "A"),
         );
         assert_eq!(client.get_invoice(&id).status, InvoiceStatus::Draft);
         
