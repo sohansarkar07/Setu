@@ -178,20 +178,24 @@ export default function PortfolioPage() {
                           </span>
                         </td>
                         <td>
-                        {inv.fundTxHash && /^[0-9a-fA-F]{64}$/.test(inv.fundTxHash) ? (
-                            <a
-                              href={`https://stellar.expert/explorer/testnet/tx/${inv.fundTxHash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[rgba(0,240,255,0.1)] border border-transparent hover:border-[rgba(0,240,255,0.2)]"
-                              style={{ color: 'var(--text-muted)' }}
-                              title="View on Stellar Expert"
-                            >
-                              <ExternalLink size={14} className="group-hover:text-[var(--neon-cyan)] transition-colors" />
-                            </a>
-                          ) : (
-                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
-                          )}
+                        {(() => {
+                          const displayHash = inv.fundTxHash || inv.verifyTxHash || inv.txHash;
+                          if (displayHash) {
+                            return (
+                              <a
+                                href={`https://stellar.expert/explorer/testnet/tx/${displayHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[rgba(0,240,255,0.1)] border border-transparent hover:border-[rgba(0,240,255,0.2)]"
+                                style={{ color: 'var(--text-muted)' }}
+                                title="View on Stellar Expert"
+                              >
+                                <ExternalLink size={14} className="group-hover:text-[var(--neon-cyan)] transition-colors" />
+                              </a>
+                            );
+                          }
+                          return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>;
+                        })()}
                         </td>
                       </tr>
                     ))}
