@@ -3,6 +3,8 @@
   <p><b>The First Invoice Financing Protocol on Stellar with Built-in Default Protection, AI Risk Scoring & Secondary Market Liquidity</b></p>
 
   <p>🌐 <strong>Live Application: <a href="https://setu-gray-delta.vercel.app/">https://setu-gray-delta.vercel.app/</a></strong></p>
+  <p>📝 <strong>Google Form: <a href="https://docs.google.com/forms/d/e/1FAIpQLSfehNYNbnaJsl7eJOYa1LtgZK0LpjhhHH-WnaAfdx5b4C3yvw/viewform?usp=publish-editor">Access Here</a></strong></p>
+  <p>📊 <strong>Spreadsheet: <a href="https://docs.google.com/forms/d/e/1FAIpQLSfehNYNbnaJsl7eJOYa1LtgZK0LpjhhHH-WnaAfdx5b4C3yvw/viewform?usp=publish-editor">Access Here</a></strong></p>
 
   <p>
     <a href="https://github.com/sohansarkar07/Setu">
