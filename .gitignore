@@ -23,3 +23,5 @@ contracts/target/
 
 # Rustup installer
 rustup-init.exe
+.vercel
+.env*

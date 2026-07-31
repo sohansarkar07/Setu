@@ -49,7 +49,7 @@ Analyze the risk and return ONLY the letter A, B, or C. No other text.`;
     }
 
     const data = await response.json();
-    let resultText = data.choices?.[0]?.message?.content?.trim()?.toUpperCase() || '';
+    const resultText = data.choices?.[0]?.message?.content?.trim()?.toUpperCase() || '';
     
     // Fallback if AI gets chatty
     let tier = 'B';

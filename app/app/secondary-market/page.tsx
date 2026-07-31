@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useWallet } from '@/lib/wallet-context';
 import { useInvoiceStore } from '@/lib/invoice-store';
 import { shortenAddress } from '@/lib/stellar';
-import { fundInvoiceOnChain } from '@/lib/soroban';
+
 import {
   TrendingUp, Shield, Wallet, AlertCircle, Coins,
   Clock, CheckCircle, Loader2, DollarSign, Activity,

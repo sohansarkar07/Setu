@@ -396,7 +396,7 @@ mod test {
         let client = SetuInvoiceContractClient::new(&env, &contract_id);
         
         let admin = Address::generate(&env);
-        let token = Address::generate(&env);
+        let token = env.register_stellar_asset_contract(admin.clone());
         let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
@@ -426,11 +426,13 @@ mod test {
         let client = SetuInvoiceContractClient::new(&env, &contract_id);
         
         let admin = Address::generate(&env);
-        let token = Address::generate(&env);
+        let token = env.register_stellar_asset_contract(admin.clone());
+        let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token);
         let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
         let investor = Address::generate(&env);
+        token_admin.mint(&investor, &10000000);
         
         client.initialize(&admin, &token, &reserve_pool);
         client.mint_invoice(
@@ -467,7 +469,7 @@ mod test {
         let client = SetuInvoiceContractClient::new(&env, &contract_id);
         
         let admin = Address::generate(&env);
-        let token = Address::generate(&env);
+        let token = env.register_stellar_asset_contract(admin.clone());
         let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
@@ -498,11 +500,13 @@ mod test {
         let client = SetuInvoiceContractClient::new(&env, &contract_id);
         
         let admin = Address::generate(&env);
-        let token = Address::generate(&env);
+        let token = env.register_stellar_asset_contract(admin.clone());
+        let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token);
         let reserve_pool = Address::generate(&env);
         let supplier = Address::generate(&env);
         let buyer = Address::generate(&env);
         let investor = Address::generate(&env);
+        token_admin.mint(&investor, &10000000);
         
         // 1. Initialize
         client.initialize(&admin, &token, &reserve_pool);

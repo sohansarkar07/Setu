@@ -7,7 +7,7 @@ import { shortenAddress } from '@/lib/stellar';
 import { approveKYCOnChain, revokeKYCOnChain } from '@/lib/soroban';
 import {
   Shield, UserCheck, UserX, Loader2, Users, Wallet,
-  AlertCircle, CheckCircle, Lock, Crown, UserPlus, Trash2,
+  CheckCircle, Lock, Crown, UserPlus, Trash2,
   ExternalLink
 } from 'lucide-react';
 
@@ -34,7 +34,6 @@ export default function AdminPage() {
   // ── Access checks ────────────────────────────────────────────────────────────
   const isSuperAdmin = publicKey === SUPER_ADMIN;
   const isAdmin = adminList.some(a => a.address === publicKey);
-  const hasAccess = isConnected && isAdmin;
 
   // ── KYC Handlers ────────────────────────────────────────────────────────────
   const handleKYCAction = async (action: 'add' | 'remove') => {
