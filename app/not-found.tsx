@@ -22,7 +22,7 @@ export default function NotFound() {
       </h2>
       
       <p className="max-w-md mb-8" style={{ color: 'var(--text-muted)' }}>
-        The page or invoice you are looking for doesn't exist, has been moved, or you don't have access to view it.
+        The page or invoice you are looking for doesn&apos;t exist, has been moved, or you don&apos;t have access to view it.
       </p>
       
       <div className="flex gap-4">

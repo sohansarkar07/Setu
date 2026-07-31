@@ -23,7 +23,7 @@ export function useStellarPrice(): StellarPrice {
   useEffect(() => {
     async function fetchPrice() {
       try {
-        const res = await fetch(
+        await fetch(
           `${STELLAR_NETWORK.HORIZON_URL}/assets?asset_code=XLM&limit=1`,
           { cache: 'no-store' }
         );

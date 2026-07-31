@@ -2,7 +2,7 @@
 
 import { ExternalLink, Copy, CheckCheck } from 'lucide-react';
 import { useClipboard } from '@/lib/hooks/useClipboard';
-import { txExplorerUrl, shortenAddress } from '@/lib/stellar';
+import { txExplorerUrl } from '@/lib/stellar';
 
 interface TxHashBadgeProps {
   hash: string;
