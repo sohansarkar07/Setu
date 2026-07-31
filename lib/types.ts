@@ -13,10 +13,13 @@ export interface Invoice {
   createdAt: string;
   verifiedAt?: string;
   fundedAt?: string;
+  paidAt?: string;
   investor?: string;
   txHash?: string;
   verifyTxHash?: string;
   fundTxHash?: string;
+  reserveSkimmed?: number;   // 2% reserve pool skim amount
+  netSupplierAmount?: number; // amount - reserveSkimmed
 }
 
 export interface TransactionResult {
@@ -49,4 +52,20 @@ export interface SecondaryListing {
   price: number;
   active: boolean;
   createdAt: string;
+  listingId?: string;     // unique listing identifier
+  discount?: number;      // percentage discount from face value
+}
+
+export interface AdminRecord {
+  address: string;
+  addedAt: string;
+  addedBy: string;        // 'genesis' for super-admin, else wallet address
+  isSuperAdmin?: boolean;
+}
+
+export interface ReservePoolStats {
+  totalDeposited: number;
+  totalPaidOut: number;
+  currentBalance: number;
+  lastUpdated: string;
 }
